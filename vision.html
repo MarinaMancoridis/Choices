@@ -6,24 +6,30 @@
 <title>Choices — Vision</title>
 <style>
   :root {
-    --bg: #fbfbfd;
-    --text: #1d1d1f;
-    --dim: #6e6e73;
-    --faint: #a1a1a6;
-    --hair: rgba(0, 0, 0, 0.09);
-    --layer: rgba(0, 0, 0, 0.022);
-    --accent: #0071e3;
+    /* Color lives in the surfaces, never in the words. Each nested box adds one
+       more translucent layer of the same quiet blue, so depth reads as tone. */
+    --bg: #f7f8fb;
+    --bg-far: #fcfaf8;
+    --text: #1d1d22;
+    --dim: #65656e;
+    --faint: #9b9ba6;
+    --hair: rgba(42, 50, 88, 0.10);
+    --layer: rgba(58, 78, 150, 0.030);
+    --mark: #8990b4;
+    --accent: #5068b8;
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #000;
-      --text: #f5f5f7;
-      --dim: #98989d;
-      --faint: #6e6e73;
-      --hair: rgba(255, 255, 255, 0.13);
-      --layer: rgba(255, 255, 255, 0.035);
-      --accent: #2997ff;
+      --bg: #0a0b0f;
+      --bg-far: #100e0d;
+      --text: #f2f2f5;
+      --dim: #9a9aa6;
+      --faint: #6e6e7c;
+      --hair: rgba(168, 180, 230, 0.14);
+      --layer: rgba(130, 155, 255, 0.045);
+      --mark: #7f87b0;
+      --accent: #8c9ee0;
     }
   }
 
@@ -31,7 +37,9 @@
   html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    background: var(--bg);
+    min-height: 100vh;
+    background: linear-gradient(168deg, var(--bg) 0%, var(--bg-far) 85%);
+    background-attachment: fixed;
     color: var(--text);
     font-family: var(--font);
     font-size: 16px;
@@ -40,19 +48,40 @@
   }
   [contenteditable]:focus { outline: none; }
 
-  main { max-width: 760px; margin: 0 auto; padding: 10vh 28px 22vh; }
+  main { max-width: 1240px; margin: 0 auto; padding: 9vh 40px 20vh; }
 
-  .eyebrow {
+  .page-title {
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    text-align: center;
+    margin: 0 0 22px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--hair);
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 64px;
+    align-items: start;
+  }
+
+  .col-name {
     font-size: 13px;
     font-weight: 500;
-    letter-spacing: 0.02em;
-    color: var(--faint);
-    margin: 0 0 18px 2px;
+    letter-spacing: 0.01em;
+    color: var(--dim);
+    margin: 0 0 13px 2px;
+    display: inline-block;
+    min-width: 2em;
   }
+  .col-name:empty::before { content: "Untitled"; color: var(--faint); }
 
   /* ---------- Tree: one node type, nested ---------- */
   ul.tree, ul.children { list-style: none; margin: 0; padding: 0; }
-  ul.tree > li + li, ul.children > li + li { margin-top: 7px; }
+  ul.children > li + li { margin-top: 7px; }
 
   li.node {
     border: 1px solid var(--hair);
@@ -80,7 +109,7 @@
     width: 16px; flex: 0 0 16px; height: 24px;
     position: relative;
     cursor: inherit;
-    color: var(--faint);
+    color: var(--mark);
     visibility: hidden;
     transition: color 0.15s ease;
   }
@@ -132,8 +161,7 @@
 
   /* ---------- Four to a level: a full level offers no way in ---------- */
   li.node:has(> ul.children > li.node:nth-of-type(4)) > .row > .row-add,
-  ul.children:has(> li.node:nth-of-type(4)) > li.add,
-  ul.tree:has(> li.node:nth-of-type(4)) > li.add { display: none; }
+  ul.children:has(> li.node:nth-of-type(4)) > li.add { display: none; }
 
   /* ---------- Dotted: add inside this box ---------- */
   .row-add {
@@ -145,7 +173,7 @@
     margin: 1px 0 0 8px;
     padding: 0;
     font: inherit; font-size: 14px; line-height: 1;
-    color: var(--faint);
+    color: var(--mark);
     border: 1px dashed var(--hair);
     border-radius: 7px;
     cursor: pointer;
@@ -165,7 +193,7 @@
     background: none;
     font: inherit;
     font-size: 14px;
-    color: var(--faint);
+    color: var(--mark);
     padding: 10px 14px;
     border: 1px dashed var(--hair);
     border-radius: 12px;
@@ -178,16 +206,67 @@
   .add-btn:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
   .add-btn:hover span { opacity: 1; }
 
-  .hint {
-    margin-top: 44px;
-    padding-top: 18px;
-    border-top: 1px solid var(--hair);
-    font-size: 13px;
-    color: var(--faint);
+  /* ---------- Beliefs: one line, a dot for each ---------- */
+  ul.rail {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0 0 26px;
+    position: relative;
   }
+  ul.rail::before {
+    content: "";
+    position: absolute;
+    left: 9px; top: 16px; bottom: 10px;
+    width: 1px;
+    background: var(--mark);
+    opacity: 0.4;
+  }
+  ul.rail > li { position: relative; padding: 0 0 20px; }
+  ul.rail > li:last-child { padding-bottom: 0; }
 
-  @media (max-width: 600px) {
-    main { padding: 6vh 16px 16vh; }
+  .dot {
+    position: absolute;
+    left: -20.5px; top: 7px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--mark);
+  }
+  .belief-text {
+    display: block;
+    font-size: 14.5px;
+    line-height: 1.5;
+    letter-spacing: -0.005em;
+    color: var(--text);
+    min-height: 1.5em;
+    cursor: text;
+  }
+  .belief-text:empty::before { content: "A belief"; color: var(--faint); }
+
+  .dot-add {
+    appearance: none; -webkit-appearance: none;
+    background: none;
+    position: absolute;
+    left: -24px; top: 4px;
+    width: 13px; height: 13px;
+    padding: 0;
+    border: 1px dashed var(--hair);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: border-color 0.18s ease;
+  }
+  li.rail-add { opacity: 0.55; transition: opacity 0.18s ease; }
+  li.rail-add:hover { opacity: 1; }
+  li.rail-add:hover .dot-add { border-color: var(--accent); }
+  .rail-add-label {
+    font-size: 14.5px;
+    color: var(--mark);
+    cursor: pointer;
+  }
+  li.rail-add:hover .rail-add-label { color: var(--accent); }
+
+  @media (max-width: 940px) {
+    main { padding: 6vh 20px 16vh; max-width: 760px; }
+    .columns { grid-template-columns: minmax(0, 1fr); gap: 46px; }
     ul.children { padding-left: 20px; }
     li.node[data-depth="0"] > .row > .title { font-size: 17px; }
   }
@@ -195,85 +274,102 @@
 </head>
 <body>
 <main>
-  <p class="eyebrow">Choices</p>
+  <h1 class="page-title" contenteditable="true">Choices Project</h1>
 
-  <!--
-    One structure, all the way down: a <li> holds text, and optionally a <ul> of
-    more of the same. Edit this list directly to change the vision.
-  -->
-  <ul class="tree" id="tree">
-    <li>
-      Build a language model that can reason about a person's choices and preferences.
-      Today's decision aids hold a person as a few unknown weights — too impoverished an
-      account of anyone. We will build a model of a person rich enough to train against,
-      and use it to evaluate and build aids that actually help someone choose.
+  <div class="columns">
+    <section>
+      <h2 class="col-name" contenteditable="true">Conceptal</h2>
 
-      <ul>
-        <li>Show that today's models cannot help a person choose
+      <!--
+        One structure, all the way down: a <li> holds text, and optionally a <ul> of
+        more of the same. Edit this list directly to change the tree.
+      -->
+      <ul class="tree" id="tree">
+        <li>
+          Build a language model that can reason about a person's choices and preferences.
+          Today's decision aids hold a person as a few unknown weights — too impoverished an
+          account of anyone. We will build a model of a person rich enough to train against,
+          and use it to evaluate and build aids that actually help someone choose.
+
           <ul>
-            <li>Choose the first setting to work in, and the decisions it covers</li>
-            <li>Build a benchmark that measures how well a model helps a person reason about their own choices</li>
-            <li>Score frontier models on it, and show they do poorly
+            <li>Show that today's models cannot help a person choose
               <ul>
-                <li>Gather the aids built for deciding — DELLMa, Decision Flow, Decisive — and score them alongside</li>
-                <li>Reproduce the ones we cannot run, or get them from their authors</li>
+                <li>Choose the first setting to work in, and the decisions it covers</li>
+                <li>Build a benchmark that measures how well a model helps a person reason about their own choices</li>
+                <li>Score frontier models on it, and show they do poorly
+                  <ul>
+                    <li>Gather the aids built for deciding — DELLMa, Decision Flow, Decisive — and score them alongside</li>
+                    <li>Reproduce the ones we cannot run, or get them from their authors</li>
+                  </ul>
+                </li>
+                <li>Show they fail at helping a person choose, not only at helping them reason</li>
               </ul>
             </li>
-            <li>Show they fail at helping a person choose, not only at helping them reason</li>
-          </ul>
-        </li>
 
-        <li>Build a neural model of a user
-          <ul>
-            <li>Give it dimensions that hold steady and dimensions that move with context</li>
-            <li>Put known effects into it — a sunk cost, a standing aversion to price — alongside real ambivalence</li>
-            <li>Make adding one more dimension of a person a modular operation
+            <li>Build a neural model of a user
               <ul>
-                <li>Pick the dimensions that pay for themselves first</li>
-                <li>Hold the line between domain-agnostic psychology and a domain taken seriously</li>
+                <li>Give it dimensions that hold steady and dimensions that move with context</li>
+                <li>Put known effects into it — a sunk cost, a standing aversion to price — alongside real ambivalence</li>
+                <li>Make adding one more dimension of a person a modular operation
+                  <ul>
+                    <li>Pick the dimensions that pay for themselves first</li>
+                    <li>Hold the line between domain-agnostic psychology and a domain taken seriously</li>
+                  </ul>
+                </li>
+                <li>Earn the claim that the model is human-like enough to grade an aid against</li>
               </ul>
             </li>
-            <li>Earn the claim that the model is human-like enough to grade an aid against</li>
-          </ul>
-        </li>
 
-        <li>Build the verifier that trains a model to reason about people
-          <ul>
-            <li>Build a vocalizer that says in English what tendencies the user model is exhibiting
+            <li>Build the verifier that trains a model to reason about people
               <ul>
-                <li>Design each mechanism so the vocalizer can be trusted without leaning on probes</li>
-                <li>Let it voice its own uncertainty instead of passing the network straight through</li>
-                <li>Keep it general enough that it is not just a fitting of our own user model</li>
+                <li>Build a vocalizer that says in English what tendencies the user model is exhibiting
+                  <ul>
+                    <li>Design each mechanism so the vocalizer can be trusted without leaning on probes</li>
+                    <li>Let it voice its own uncertainty instead of passing the network straight through</li>
+                    <li>Keep it general enough that it is not just a fitting of our own user model</li>
+                  </ul>
+                </li>
+                <li>Invert the vocalizer to recover an estimated utility function
+                  <ul>
+                    <li>Settle whether to invert at all, or read utilities off the model directly</li>
+                  </ul>
+                </li>
+                <li>Turn that utility function into a reward environment for behavior</li>
+                <li>Train a reasoning model against it, and beat every aid we benchmarked
+                  <ul>
+                    <li>Separate the error the user model caused from the error the vocalizer caused</li>
+                    <li>Teach it to clarify what a person cannot articulate while it learns what they want</li>
+                  </ul>
+                </li>
               </ul>
             </li>
-            <li>Invert the vocalizer to recover an estimated utility function
-              <ul>
-                <li>Settle whether to invert at all, or read utilities off the model directly</li>
-              </ul>
-            </li>
-            <li>Turn that utility function into a reward environment for behavior</li>
-            <li>Train a reasoning model against it, and beat every aid we benchmarked
-              <ul>
-                <li>Separate the error the user model caused from the error the vocalizer caused</li>
-                <li>Teach it to clarify what a person cannot articulate while it learns what they want</li>
-              </ul>
-            </li>
-          </ul>
-        </li>
 
-        <li>Land it where it counts
-          <ul>
-            <li>Grade every aid across the space of users rather than on one fixed benchmark</li>
-            <li>Choose the domain that carries the result, and win in it</li>
-            <li>Show with real users that our model helps them choose better</li>
-            <li>Write it up so the field cannot file it away as prompting a user persona</li>
+            <li>Land it where it counts
+              <ul>
+                <li>Grade every aid across the space of users rather than on one fixed benchmark</li>
+                <li>Choose the domain that carries the result, and win in it</li>
+                <li>Show with real users that our model helps them choose better</li>
+                <li>Write it up so the field cannot file it away as prompting a user persona</li>
+              </ul>
+            </li>
           </ul>
         </li>
       </ul>
-    </li>
-  </ul>
+    </section>
 
-  <p class="hint">Click a box to open it, or its text to edit. The dashed <b>+</b> on a box adds one inside it; the dashed box at the end of a level adds one beside. Return also adds one beside, Delete on empty text removes it. Four boxes to a level, at most — a full level stops offering. Edits live in the page — write them back into <code>vision.html</code> to keep them.</p>
+    <section>
+      <h2 class="col-name" contenteditable="true">Minimal beliefs</h2>
+
+      <!-- One <li> per belief; the line and the dots are drawn around them. -->
+      <ul class="rail" id="beliefs">
+        <li>A person is better off choosing with an aid than without one</li>
+        <li>People make mistakes when they choose</li>
+        <li>People cannot say what they want, but it can be drawn out of them</li>
+        <li>There are structured ways to predict a person</li>
+        <li>What worked for math and code — a reward environment — will work for behavior</li>
+      </ul>
+    </section>
+  </div>
 </main>
 
 <script>
@@ -331,8 +427,7 @@
     return decorate(document.createElement('li'), depth);
   }
 
-  function focusTitle(li) {
-    var el = li.querySelector(':scope > .row > .title');
+  function caretTo(el) {
     el.focus();
     var r = document.createRange();
     r.selectNodeContents(el);
@@ -341,6 +436,8 @@
     s.removeAllRanges();
     s.addRange(r);
   }
+
+  function focusTitle(li) { caretTo(li.querySelector(':scope > .row > .title')); }
 
   function counts() {
     var nodes = tree.querySelectorAll('li.node');
@@ -359,10 +456,9 @@
   function insertInto(parent, before) {
     var list = before ? before.parentNode : parent.querySelector(':scope > ul.children');
     if (!roomIn(list)) return;
-    var depth = parent ? depthOf(parent) + 1 : 0;
-    var li = makeNode(depth);
+    var li = makeNode(depthOf(parent) + 1);
     list.insertBefore(li, before || list.querySelector(':scope > li.add'));
-    if (parent) parent.classList.remove('collapsed');
+    parent.classList.remove('collapsed');
     counts();
     focusTitle(li);
   }
@@ -388,6 +484,7 @@
     var title = e.target.closest('.title');
     if (!title) return;
     var li = title.closest('li.node');
+    if (li.parentNode === tree) return; // the root of a tree has no siblings
 
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -401,7 +498,6 @@
 
     if ((e.key === 'Backspace' || e.key === 'Delete') && title.textContent.trim() === '') {
       if (li.querySelector(':scope > ul.children > li.node')) return;
-      if (li.parentNode === tree && tree.querySelectorAll(':scope > li.node').length < 2) return;
       e.preventDefault();
       var prev = li.previousElementSibling;
       var parent = li.parentNode.closest('li.node');
@@ -422,11 +518,57 @@
   });
 
   tree.addEventListener('input', counts);
-
-  var roots = tree.querySelectorAll(':scope > li');
-  for (var i = 0; i < roots.length; i++) decorate(roots[i], 0);
-  tree.appendChild(addSlot());
+  decorate(tree.querySelector(':scope > li'), 0); // one root: a tree, not a list
   counts();
+
+  /* ---------- Beliefs: the same text, strung on a line ---------- */
+  var rail = document.getElementById('beliefs');
+
+  function makeBelief(text) {
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="dot"></span><div class="belief-text" contenteditable="true"></div>';
+    li.querySelector('.belief-text').textContent = text || '';
+    return li;
+  }
+
+  var authored = rail.querySelectorAll(':scope > li');
+  for (var j = 0; j < authored.length; j++) {
+    rail.replaceChild(makeBelief(authored[j].textContent.replace(/\s+/g, ' ').trim()), authored[j]);
+  }
+
+  var railAdd = document.createElement('li');
+  railAdd.className = 'rail-add';
+  railAdd.innerHTML = '<button class="dot-add" aria-label="Add a belief"></button>' +
+                      '<span class="rail-add-label">Add</span>';
+  rail.appendChild(railAdd);
+
+  function addBelief(before) {
+    var li = makeBelief('');
+    rail.insertBefore(li, before || railAdd);
+    caretTo(li.querySelector('.belief-text'));
+  }
+
+  rail.addEventListener('click', function (e) {
+    if (e.target.closest('.dot-add') || e.target.closest('.rail-add-label')) addBelief(null);
+  });
+
+  rail.addEventListener('keydown', function (e) {
+    var t = e.target.closest('.belief-text');
+    if (!t) return;
+    var li = t.parentNode;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addBelief(li.nextSibling);
+      return;
+    }
+    if ((e.key === 'Backspace' || e.key === 'Delete') && t.textContent.trim() === '') {
+      if (rail.querySelectorAll(':scope > li:not(.rail-add)').length < 2) return;
+      e.preventDefault();
+      var prev = li.previousElementSibling;
+      rail.removeChild(li);
+      if (prev) caretTo(prev.querySelector('.belief-text'));
+    }
+  });
 })();
 </script>
 </body>
