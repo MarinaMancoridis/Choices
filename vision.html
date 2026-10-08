@@ -111,6 +111,14 @@
     align-items: start;
   }
 
+  .divide {
+    border: 0;
+    border-top: 1px solid var(--hair);
+    margin: 60px 0 32px;
+  }
+  .columns.bottom { grid-template-columns: 1fr 1fr; }
+  .columns.bottom .rail { padding-right: 12px; }
+
   .col-name {
     font-size: 13px;
     font-weight: 500;
@@ -139,6 +147,42 @@
   @media (prefers-color-scheme: dark) {
     li.node[data-depth="0"] { background: hsl(220 16% 9%); }
   }
+
+  li.node { position: relative; }
+
+  /* Drag by the grip in the gutter, so text stays selectable */
+  .grip {
+    appearance: none; -webkit-appearance: none;
+    position: absolute;
+    left: -19px; top: 13px;
+    width: 14px; height: 18px;
+    padding: 0;
+    border: 0;
+    background:
+      radial-gradient(circle, var(--tint) 1.1px, transparent 1.2px) 2px 2px / 5px 5px repeat;
+    opacity: 0;
+    cursor: grab;
+    transition: opacity 0.18s ease;
+  }
+  li.node[data-depth="0"] > .row > .grip { display: none; }
+  .row:hover > .grip, .grip:focus-visible { opacity: 0.55; }
+  .grip:hover { opacity: 1; }
+  .grip:active { cursor: grabbing; }
+
+  .dragging { opacity: 0.35; }
+  .drop-before::after, .drop-after::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    pointer-events: none;
+  }
+  li.node.drop-before::after { top: -5px; }
+  li.node.drop-after::after { bottom: -5px; }
+  li.belief.drop-before::after { top: -7px; left: -24px; }
+  li.belief.drop-after::after { bottom: 6px; left: -24px; }
 
   .row {
     display: flex;
@@ -254,6 +298,9 @@
   .add-btn:hover span { opacity: 1; }
 
   /* ---------- Beliefs: one line, a dot for each ---------- */
+  #hard { --h: 16; }
+  #works { --h: 202; }
+
   ul.rail {
     --h: 340;
     list-style: none;
@@ -304,12 +351,14 @@
   .belief-add:hover { color: var(--accent); border-color: var(--accent); }
 
   .dot {
+    cursor: grab;
     position: absolute;
     left: -21.5px; top: 6px;
     width: 9px; height: 9px;
     border-radius: 50%;
     background: var(--tint);
   }
+  .dot:active { cursor: grabbing; }
   .belief-text {
     flex: 1 1 auto;
     min-width: 0;
@@ -454,11 +503,45 @@
       </ul>
     </section>
   </div>
+
+  <hr class="divide">
+
+  <div class="columns bottom">
+    <section>
+      <h2 class="col-name" contenteditable="true">What makes this hard</h2>
+      <ul class="rail" id="hard">
+        <li>People are complex and the area is fuzzy
+          <ul>
+            <li>What is known about a person is scattered, and not in a computable form</li>
+          </ul>
+        </li>
+        <li>Reasoning models are trained where something can score a trace — nothing scores a trace about a person</li>
+        <li>Structure buys a vocalizer we can trust and costs the flexibility that made the model worth having</li>
+        <li>There will always be dimensions of a person the model misses</li>
+        <li>The tighter the fit — to our own user model, or to one domain — the narrower the contribution</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="col-name" contenteditable="true">Why I think this will work</h2>
+      <ul class="rail" id="works">
+        <li>Reward environments have already carried math and code</li>
+        <li>Today's models are psychologically impoverished, so there is room to beat them</li>
+        <li>The new complexity sits somewhere new: a neural user model rather than a structural one
+          <ul>
+            <li>Heterogeneity between people stops being one free variable</li>
+          </ul>
+        </li>
+        <li>We have a path to a reward function that can improve, build and compare decision aids</li>
+      </ul>
+    </section>
+  </div>
 </main>
 
 <script>
 (function () {
   var tree = document.getElementById('tree');
+  var RAIL_IDS = ['beliefs', 'hard', 'works'];
   var railEl = document.getElementById('beliefs');
   var titleEl = document.querySelector('.page-title');
   var nameEls = document.querySelectorAll('.col-name');
@@ -503,11 +586,16 @@
       tree.textContent = '';
       tree.appendChild(liFrom(saved.tree));
     }
-    if (saved.beliefs) {
-      railEl.textContent = '';
-      for (var bi = 0; bi < saved.beliefs.length; bi++) {
-        railEl.appendChild(liFrom(typeof saved.beliefs[bi] === 'string'
-          ? { t: saved.beliefs[bi] } : saved.beliefs[bi]));
+    var railData = saved.rails || (saved.beliefs ? { beliefs: saved.beliefs } : null);
+    if (railData) {
+      for (var rk = 0; rk < RAIL_IDS.length; rk++) {
+        var rows = railData[RAIL_IDS[rk]];
+        if (!rows) continue;                       // a rail this save predates
+        var el = document.getElementById(RAIL_IDS[rk]);
+        el.textContent = '';
+        for (var ri = 0; ri < rows.length; ri++) {
+          el.appendChild(liFrom(typeof rows[ri] === 'string' ? { t: rows[ri] } : rows[ri]));
+        }
       }
     }
     if (saved.title) titleEl.textContent = saved.title;
@@ -542,6 +630,7 @@
     var row = document.createElement('div');
     row.className = 'row';
     row.innerHTML =
+      '<button class="grip" draggable="true" aria-label="Drag to reorder"></button>' +
       '<button class="twist" aria-label="Open or close"></button>' +
       '<div class="title" contenteditable="true"></div>' +
       '<div class="count"></div>' +
@@ -608,6 +697,7 @@
       insertInto(slot.parentNode.closest('li.node'), slot);
       return;
     }
+    if (e.target.closest('.grip')) return;  // the grip is for dragging
     if (e.target.closest('.title')) return; // clicking text means editing it
     var row = e.target.closest('.row');
     if (row) {
@@ -666,7 +756,6 @@
   if (saved && saved.tree) applyOpen(tree.querySelector(':scope > li.node'), saved.tree);
 
   /* ---------- Beliefs: the same text, strung on a line, nestable ---------- */
-  var rail = document.getElementById('beliefs');
 
   function addRow() {
     var li = document.createElement('li');
@@ -699,7 +788,7 @@
     kids.appendChild(addRow());
 
     li.textContent = '';
-    li.innerHTML = '<span class="dot"></span>';
+    li.innerHTML = '<span class="dot" draggable="true"></span>';
     li.appendChild(row);
     li.appendChild(kids);
     li.className = 'belief';
@@ -714,9 +803,15 @@
     return decorateBelief(document.createElement('li'), depth);
   }
 
-  var authored = rail.querySelectorAll(':scope > li');
-  for (var j = 0; j < authored.length; j++) decorateBelief(authored[j], 0);
-  rail.appendChild(addRow());
+  var rails = [];
+  for (var rI = 0; rI < RAIL_IDS.length; rI++) {
+    var el = document.getElementById(RAIL_IDS[rI]);
+    if (!el) continue;
+    rails.push(el);
+    var authored = el.querySelectorAll(':scope > li');
+    for (var j = 0; j < authored.length; j++) decorateBelief(authored[j], 0);
+    el.appendChild(addRow());
+  }
 
   function addBelief(list, before) {
     var host = list.closest('li.belief');
@@ -725,7 +820,7 @@
     caretTo(li.querySelector(':scope > .belief-row > .belief-text'));
   }
 
-  rail.addEventListener('click', function (e) {
+  function onRailClick(e) {
     var inside = e.target.closest('.belief-add');
     if (inside) {
       addBelief(inside.closest('li.belief').querySelector(':scope > ul.rail'), null);
@@ -733,6 +828,77 @@
     }
     var beside = e.target.closest('.rail-add');
     if (beside) addBelief(beside.parentNode, beside);
+  }
+
+  /* ---------- Drag a box, or a dot, to somewhere else ---------- */
+  var dragged = null, mark = null, markAfter = false;
+
+  function redepth(li, depth) {
+    if (li.classList.contains('node')) {
+      li.dataset.depth = depth;
+      li.classList.toggle('deep', depth >= 3);
+      var kids = li.querySelectorAll(':scope > ul.children > li.node');
+      for (var i = 0; i < kids.length; i++) redepth(kids[i], depth + 1);
+    } else {
+      li.dataset.depth = depth;
+      var bs = li.querySelectorAll(':scope > ul.rail > li.belief');
+      for (var j = 0; j < bs.length; j++) redepth(bs[j], depth + 1);
+    }
+  }
+
+  function clearMark() {
+    if (mark) mark.classList.remove('drop-before', 'drop-after');
+    mark = null;
+  }
+
+  document.addEventListener('dragstart', function (e) {
+    var handle = e.target.closest('.grip, .dot');
+    if (!handle) { e.preventDefault(); return; }
+    dragged = handle.closest('li.node, li.belief');
+    if (!dragged || dragged.parentNode === tree) { dragged = null; e.preventDefault(); return; }
+    dragged.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+    var ghost = dragged.querySelector(':scope > .row, :scope > .belief-row');
+    if (ghost && e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(ghost, 16, 14);
+  });
+
+  document.addEventListener('dragover', function (e) {
+    if (!dragged) return;
+    var kind = dragged.classList.contains('node') ? 'li.node' : 'li.belief';
+    var over = e.target.closest(kind);
+    if (!over || over === dragged || dragged.contains(over) || over.parentNode === tree) {
+      clearMark();
+      return;
+    }
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var box = (over.querySelector(':scope > .row, :scope > .belief-row') || over).getBoundingClientRect();
+    var after = e.clientY > box.top + box.height / 2;
+    if (over !== mark || after !== markAfter) {
+      clearMark();
+      mark = over;
+      markAfter = after;
+      over.classList.add(after ? 'drop-after' : 'drop-before');
+    }
+  });
+
+  document.addEventListener('drop', function (e) {
+    if (!dragged || !mark) return;
+    e.preventDefault();
+    var list = mark.parentNode;
+    list.insertBefore(dragged, markAfter ? mark.nextSibling : mark);
+    var host = list.closest('li.node, li.belief');
+    redepth(dragged, host ? parseInt(host.dataset.depth, 10) + 1 : 0);
+    clearMark();
+    counts();
+    save();
+  });
+
+  document.addEventListener('dragend', function () {
+    if (dragged) dragged.classList.remove('dragging');
+    dragged = null;
+    clearMark();
   });
 
   /* ---------- Save after anything changes ---------- */
@@ -757,9 +923,13 @@
     clearTimeout(pending);
     pending = setTimeout(function () {
       try {
-        var tops = rail.querySelectorAll(':scope > li.belief');
-        var beliefs = [];
-        for (var i = 0; i < tops.length; i++) beliefs.push(beliefData(tops[i]));
+        var railsOut = {};
+        for (var r = 0; r < rails.length; r++) {
+          var tops = rails[r].querySelectorAll(':scope > li.belief');
+          var rows = [];
+          for (var i = 0; i < tops.length; i++) rows.push(beliefData(tops[i]));
+          railsOut[rails[r].id] = rows;
+        }
         var names = [];
         for (var j = 0; j < nameEls.length; j++) names.push(nameEls[j].textContent);
         store.setItem(KEY, JSON.stringify({
@@ -767,7 +937,7 @@
           title: titleEl.textContent,
           names: names,
           tree: nodeData(tree.querySelector(':scope > li.node')),
-          beliefs: beliefs
+          rails: railsOut
         }));
       } catch (e) { /* out of room, or storage blocked */ }
     }, 250);
@@ -778,7 +948,7 @@
     attributes: true, attributeFilter: ['class']
   });
 
-  rail.addEventListener('keydown', function (e) {
+  function onRailKey(e) {
     var t = e.target.closest('.belief-text');
     if (!t) return;
     var li = t.closest('li.belief');
@@ -791,7 +961,8 @@
     }
     if ((e.key === 'Backspace' || e.key === 'Delete') && t.textContent.trim() === '') {
       if (li.querySelector(':scope > ul.rail > li.belief')) return;
-      if (list === rail && rail.querySelectorAll(':scope > li.belief').length < 2) return;
+      var root = li.closest('ul.rail:not(.sub)');
+      if (list === root && root.querySelectorAll(':scope > li.belief').length < 2) return;
       e.preventDefault();
       var prev = li.previousElementSibling;
       var parent = list.closest('li.belief');
@@ -802,7 +973,12 @@
         caretTo(parent.querySelector(':scope > .belief-row > .belief-text'));
       }
     }
-  });
+  }
+
+  for (var rB = 0; rB < rails.length; rB++) {
+    rails[rB].addEventListener('click', onRailClick);
+    rails[rB].addEventListener('keydown', onRailKey);
+  }
 })();
 </script>
 </body>
