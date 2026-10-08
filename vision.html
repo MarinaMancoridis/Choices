@@ -37,6 +37,8 @@
   /* Each box derives its colours from the hue it inherits, so a branch's hue
      flows down everything inside it. Declared here, not on :root, so that
      var(--h) resolves against the element's own branch. */
+  li.node[data-depth="2"], li.node[data-depth="7"] { --fill: hsl(32 62% 93.5%); --edge: hsl(32 42% 78%); }
+
   li.node, ul.rail {
     --fill: hsl(var(--h) 68% 92.5%);
     --edge: hsl(var(--h) 48% 76%);
@@ -50,15 +52,19 @@
       --ink: hsl(var(--h) 60% 78%);
       --tint: hsl(var(--h) 50% 62%);
     }
+    li.node[data-depth="2"], li.node[data-depth="7"] {
+      --fill: hsl(32 32% 14%);
+      --edge: hsl(32 30% 30%);
+    }
   }
 
   /* Depth sets the hue: every box on a level is the same colour, whichever
      branch it sits in. Past the fifth level the sequence starts over. */
-  li.node[data-depth="1"], li.node[data-depth="6"]  { --h: 214; }
-  li.node[data-depth="2"], li.node[data-depth="7"]  { --h: 166; }
-  li.node[data-depth="3"], li.node[data-depth="8"]  { --h: 278; }
-  li.node[data-depth="4"], li.node[data-depth="9"]  { --h: 32; }
-  li.node[data-depth="5"], li.node[data-depth="10"] { --h: 340; }
+  li.node[data-depth="1"], li.node[data-depth="6"]  { --h: 214; }  /* blue */
+  li.node[data-depth="2"], li.node[data-depth="7"]  { --h: 32; }   /* sand */
+  li.node[data-depth="3"], li.node[data-depth="8"]  { --h: 278; }  /* violet */
+  li.node[data-depth="4"], li.node[data-depth="9"]  { --h: 344; }  /* rose */
+  li.node[data-depth="5"], li.node[data-depth="10"] { --h: 250; }  /* indigo */
 
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -422,6 +428,65 @@
 <script>
 (function () {
   var tree = document.getElementById('tree');
+  var railEl = document.getElementById('beliefs');
+  var titleEl = document.querySelector('.page-title');
+  var nameEls = document.querySelectorAll('.col-name');
+
+  /* ---------- Edits survive a refresh ----------
+     The page saves itself to this browser after every change. The authored
+     markup below is the fallback: edit vision.html by hand and the file wins,
+     because the saved copy is stamped with a fingerprint of what it grew from. */
+  var KEY = 'choices-vision';
+  var saved = null, store = null;
+
+  function fingerprint(str) {
+    var h = 5381;
+    for (var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+    return h.toString(36);
+  }
+  var SRC = fingerprint((tree.innerHTML + '|' + railEl.innerHTML).replace(/\s+/g, ' '));
+
+  try {
+    store = window.localStorage;
+    var raw = store.getItem(KEY);
+    if (raw) {
+      var data = JSON.parse(raw);
+      if (data && data.src === SRC) saved = data;  // same file, keep the edits
+      else store.removeItem(KEY);                  // file changed, start from it
+    }
+  } catch (e) { store = null; }
+
+  function liFrom(node) {
+    var li = document.createElement('li');
+    li.appendChild(document.createTextNode(node.t || ''));
+    if (node.c && node.c.length) {
+      var ul = document.createElement('ul');
+      for (var i = 0; i < node.c.length; i++) ul.appendChild(liFrom(node.c[i]));
+      li.appendChild(ul);
+    }
+    return li;
+  }
+
+  if (saved) {
+    if (saved.tree) {
+      tree.textContent = '';
+      tree.appendChild(liFrom(saved.tree));
+    }
+    if (saved.beliefs) {
+      railEl.textContent = '';
+      for (var bi = 0; bi < saved.beliefs.length; bi++) {
+        var bl = document.createElement('li');
+        bl.textContent = saved.beliefs[bi];
+        railEl.appendChild(bl);
+      }
+    }
+    if (saved.title) titleEl.textContent = saved.title;
+    if (saved.names) {
+      for (var ni = 0; ni < nameEls.length && ni < saved.names.length; ni++) {
+        nameEls[ni].textContent = saved.names[ni];
+      }
+    }
+  }
   var OPEN_DEPTH = 0; // boxes deeper than this start closed
   var MAX = 4;        // boxes allowed at any one level
 
@@ -568,6 +633,15 @@
   decorate(tree.querySelector(':scope > li'), 0); // one root: a tree, not a list
   counts();
 
+  function applyOpen(li, node) {
+    var kids = li.querySelectorAll(':scope > ul.children > li.node');
+    if (kids.length) li.classList.toggle('collapsed', node.o === false);
+    for (var i = 0; i < kids.length && node.c && i < node.c.length; i++) {
+      applyOpen(kids[i], node.c[i]);
+    }
+  }
+  if (saved && saved.tree) applyOpen(tree.querySelector(':scope > li.node'), saved.tree);
+
   /* ---------- Beliefs: the same text, strung on a line ---------- */
   var rail = document.getElementById('beliefs');
 
@@ -597,6 +671,42 @@
 
   rail.addEventListener('click', function (e) {
     if (e.target.closest('.dot-add') || e.target.closest('.rail-add-label')) addBelief(null);
+  });
+
+  /* ---------- Save after anything changes ---------- */
+  function nodeData(li) {
+    var kids = li.querySelectorAll(':scope > ul.children > li.node');
+    var out = { t: li.querySelector(':scope > .row > .title').textContent, c: [] };
+    if (kids.length) out.o = !li.classList.contains('collapsed');
+    for (var i = 0; i < kids.length; i++) out.c.push(nodeData(kids[i]));
+    return out;
+  }
+
+  var pending;
+  function save() {
+    if (!store) return;
+    clearTimeout(pending);
+    pending = setTimeout(function () {
+      try {
+        var texts = rail.querySelectorAll(':scope > li:not(.rail-add) > .belief-text');
+        var beliefs = [];
+        for (var i = 0; i < texts.length; i++) beliefs.push(texts[i].textContent);
+        var names = [];
+        for (var j = 0; j < nameEls.length; j++) names.push(nameEls[j].textContent);
+        store.setItem(KEY, JSON.stringify({
+          src: SRC,
+          title: titleEl.textContent,
+          names: names,
+          tree: nodeData(tree.querySelector(':scope > li.node')),
+          beliefs: beliefs
+        }));
+      } catch (e) { /* out of room, or storage blocked */ }
+    }, 250);
+  }
+
+  new MutationObserver(save).observe(document.querySelector('main'), {
+    subtree: true, childList: true, characterData: true,
+    attributes: true, attributeFilter: ['class']
   });
 
   rail.addEventListener('keydown', function (e) {
