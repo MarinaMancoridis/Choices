@@ -17,6 +17,7 @@
     --layer: rgba(58, 78, 150, 0.030);
     --mark: #8990b4;
     --accent: #5068b8;
+    --h: 220;               /* branch hue, set per top-level box */
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
@@ -30,6 +31,24 @@
       --layer: rgba(130, 155, 255, 0.045);
       --mark: #7f87b0;
       --accent: #8c9ee0;
+    }
+  }
+
+  /* Each box derives its colours from the hue it inherits, so a branch's hue
+     flows down everything inside it. Declared here, not on :root, so that
+     var(--h) resolves against the element's own branch. */
+  li.node, ul.rail {
+    --fill: hsl(var(--h) 75% 52% / 0.075);
+    --edge: hsl(var(--h) 45% 55% / 0.30);
+    --ink: hsl(var(--h) 45% 30%);
+    --tint: hsl(var(--h) 48% 50%);
+  }
+  @media (prefers-color-scheme: dark) {
+    li.node, ul.rail {
+      --fill: hsl(var(--h) 80% 60% / 0.10);
+      --edge: hsl(var(--h) 55% 65% / 0.26);
+      --ink: hsl(var(--h) 62% 80%);
+      --tint: hsl(var(--h) 55% 68%);
     }
   }
 
@@ -58,7 +77,17 @@
     text-align: center;
     margin: 0 0 22px;
     padding-bottom: 22px;
-    border-bottom: 1px solid var(--hair);
+    position: relative;
+  }
+  .page-title::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 1.5px;
+    border-radius: 1px;
+    background: linear-gradient(90deg,
+      hsl(215 62% 58%), hsl(168 52% 46%), hsl(278 48% 62%), hsl(34 78% 56%));
+    opacity: 0.6;
   }
 
   .columns {
@@ -84,9 +113,13 @@
   ul.children > li + li { margin-top: 7px; }
 
   li.node {
-    border: 1px solid var(--hair);
+    border: 1px solid var(--edge);
     border-radius: 12px;
-    background: var(--layer);
+    background: var(--fill);
+  }
+  li.node[data-depth="0"] {
+    border-color: var(--hair);
+    background: hsl(var(--h) 40% 50% / 0.04);
   }
 
   .row {
@@ -109,7 +142,7 @@
     width: 16px; flex: 0 0 16px; height: 24px;
     position: relative;
     cursor: inherit;
-    color: var(--mark);
+    color: var(--tint);
     visibility: hidden;
     transition: color 0.15s ease;
   }
@@ -141,7 +174,7 @@
   .title:empty::before { content: "Untitled"; color: var(--faint); }
 
   li.node[data-depth="0"] > .row > .title { font-size: 19px; line-height: 1.52; }
-  li.node[data-depth="1"] > .row > .title { font-size: 16px; font-weight: 500; }
+  li.node[data-depth="1"] > .row > .title { font-size: 16px; font-weight: 600; color: var(--ink); }
   li.node[data-depth="2"] > .row > .title { font-size: 15px; }
   li.node.deep > .row > .title { font-size: 14.5px; }
 
@@ -152,7 +185,7 @@
     flex: 0 0 auto;
     font-size: 12px;
     line-height: 24px;
-    color: var(--faint);
+    color: var(--tint);
     font-variant-numeric: tabular-nums;
     opacity: 0;
     transition: opacity 0.15s ease;
@@ -173,8 +206,8 @@
     margin: 1px 0 0 8px;
     padding: 0;
     font: inherit; font-size: 14px; line-height: 1;
-    color: var(--mark);
-    border: 1px dashed var(--hair);
+    color: var(--tint);
+    border: 1px dashed var(--edge);
     border-radius: 7px;
     cursor: pointer;
     opacity: 0;
@@ -193,9 +226,9 @@
     background: none;
     font: inherit;
     font-size: 14px;
-    color: var(--mark);
+    color: var(--tint);
     padding: 10px 14px;
-    border: 1px dashed var(--hair);
+    border: 1px dashed var(--edge);
     border-radius: 12px;
     cursor: pointer;
     opacity: 0.55;
@@ -208,6 +241,7 @@
 
   /* ---------- Beliefs: one line, a dot for each ---------- */
   ul.rail {
+    --h: 340;
     list-style: none;
     margin: 0;
     padding: 6px 0 0 26px;
@@ -217,19 +251,20 @@
     content: "";
     position: absolute;
     left: 9px; top: 16px; bottom: 10px;
-    width: 1px;
-    background: var(--mark);
-    opacity: 0.4;
+    width: 1.5px;
+    border-radius: 1px;
+    background: var(--tint);
+    opacity: 0.45;
   }
   ul.rail > li { position: relative; padding: 0 0 20px; }
   ul.rail > li:last-child { padding-bottom: 0; }
 
   .dot {
     position: absolute;
-    left: -20.5px; top: 7px;
-    width: 7px; height: 7px;
+    left: -21.5px; top: 6px;
+    width: 9px; height: 9px;
     border-radius: 50%;
-    background: var(--mark);
+    background: var(--tint);
   }
   .belief-text {
     display: block;
@@ -249,7 +284,7 @@
     left: -24px; top: 4px;
     width: 13px; height: 13px;
     padding: 0;
-    border: 1px dashed var(--hair);
+    border: 1.5px dashed var(--edge);
     border-radius: 50%;
     cursor: pointer;
     transition: border-color 0.18s ease;
@@ -259,7 +294,7 @@
   li.rail-add:hover .dot-add { border-color: var(--accent); }
   .rail-add-label {
     font-size: 14.5px;
-    color: var(--mark);
+    color: var(--tint);
     cursor: pointer;
   }
   li.rail-add:hover .rail-add-label { color: var(--accent); }
@@ -460,6 +495,7 @@
     list.insertBefore(li, before || list.querySelector(':scope > li.add'));
     parent.classList.remove('collapsed');
     counts();
+    paint();
     focusTitle(li);
   }
 
@@ -517,9 +553,18 @@
     }
   });
 
+  var HUES = [214, 166, 278, 34]; // one per top-level branch, cycled
+  function paint() {
+    var branches = tree.querySelectorAll('li.node[data-depth="1"]');
+    for (var i = 0; i < branches.length; i++) {
+      branches[i].style.setProperty('--h', HUES[i % HUES.length]);
+    }
+  }
+
   tree.addEventListener('input', counts);
   decorate(tree.querySelector(':scope > li'), 0); // one root: a tree, not a list
   counts();
+  paint();
 
   /* ---------- Beliefs: the same text, strung on a line ---------- */
   var rail = document.getElementById('beliefs');
