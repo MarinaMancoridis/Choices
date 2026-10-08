@@ -81,7 +81,14 @@
   }
   [contenteditable]:focus { outline: none; }
 
-  main { max-width: 1240px; margin: 0 auto; padding: 9vh 40px 20vh; }
+  main {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 9vh 40px 4vh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
   .page-title {
     font-size: 30px;
@@ -113,9 +120,15 @@
 
   .divide {
     border: 0;
-    border-top: 1px solid var(--hair);
-    margin: 60px 0 32px;
+    height: 1.5px;
+    border-radius: 1px;
+    background: linear-gradient(90deg,
+      hsl(215 62% 58%), hsl(168 52% 46%), hsl(278 48% 62%), hsl(34 78% 56%));
+    opacity: 0.6;
+    margin: 0 0 32px;
+    margin-top: auto;     /* takes up whatever room is left over */
   }
+  .columns:not(.bottom) { margin-bottom: 52px; }
   .columns.bottom { grid-template-columns: 1fr 1fr; }
   .columns.bottom .rail { padding-right: 12px; }
 
