@@ -287,6 +287,39 @@
   .row:hover > .row-add { opacity: 1; }
   .row-add:hover { color: var(--accent); border-color: var(--accent); }
 
+  /* ---------- Dotted: delete this box ---------- */
+  .row-del {
+    order: 3;
+    appearance: none; -webkit-appearance: none;
+    background: none;
+    flex: 0 0 auto;
+    width: 22px; height: 22px;
+    margin: 1px 0 0 6px;
+    padding: 0;
+    font: inherit; font-size: 15px; line-height: 1;
+    color: var(--tint);
+    border: 1px dashed var(--edge);
+    border-radius: 7px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.18s ease, color 0.18s ease, border-color 0.18s ease,
+                background 0.18s ease;
+  }
+  li.node[data-depth="0"] > .row > .row-del { display: none; }
+  .row:hover > .row-del { opacity: 1; }
+  .row-del:hover { color: hsl(2 68% 48%); border-color: hsl(2 68% 55%); }
+  .row-del.confirm {
+    opacity: 1;
+    color: #fff;
+    border-style: solid;
+    border-color: hsl(2 68% 50%);
+    background: hsl(2 68% 50%);
+  }
+  @media (prefers-color-scheme: dark) {
+    .row-del:hover { color: hsl(2 80% 68%); border-color: hsl(2 70% 60%); }
+    .row-del.confirm { background: hsl(2 62% 46%); border-color: hsl(2 62% 46%); }
+  }
+
   /* ---------- Dotted box: add another at this level ---------- */
   li.add { margin-top: 7px; }
   .add-btn {
@@ -647,7 +680,8 @@
       '<button class="twist" aria-label="Open or close"></button>' +
       '<div class="title" contenteditable="true"></div>' +
       '<div class="count"></div>' +
-      '<button class="row-add" aria-label="Add inside">+</button>';
+      '<button class="row-add" aria-label="Add inside">+</button>' +
+      '<button class="row-del" aria-label="Delete">\u00d7</button>';
     row.querySelector('.title').textContent = text;
 
     if (!kids) { kids = document.createElement('ul'); }
@@ -701,7 +735,41 @@
     focusTitle(li);
   }
 
+  var confirming = null;
+  function clearConfirm() {
+    if (confirming) {
+      confirming.classList.remove('confirm');
+      confirming.removeAttribute('title');
+      confirming = null;
+    }
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.row-del')) clearConfirm();
+  }, true);
+
   tree.addEventListener('click', function (e) {
+    var del = e.target.closest('.row-del');
+    if (del) {
+      var victim = del.closest('li.node');
+      if (victim.parentNode === tree) return;        // the root is the tree
+      var inside = victim.querySelectorAll('li.node').length;
+      if (inside && del !== confirming) {            // a box with boxes in it asks first
+        clearConfirm();
+        confirming = del;
+        del.classList.add('confirm');
+        del.title = 'Click again to delete this and the ' + inside +
+                    (inside === 1 ? ' box' : ' boxes') + ' inside it';
+        return;
+      }
+      clearConfirm();
+      var after = victim.previousElementSibling, up = victim.parentNode.closest('li.node');
+      victim.parentNode.removeChild(victim);
+      counts();
+      save();
+      if (after && after.classList.contains('node')) focusTitle(after);
+      else if (up) focusTitle(up);
+      return;
+    }
     var rowAdd = e.target.closest('.row-add');
     if (rowAdd) { insertInto(rowAdd.closest('li.node'), null); return; }
     var add = e.target.closest('.add-btn');
