@@ -10,17 +10,19 @@
     --text: #1d1d1f;
     --dim: #6e6e73;
     --faint: #a1a1a6;
-    --hair: rgba(0, 0, 0, 0.10);
+    --hair: rgba(0, 0, 0, 0.09);
+    --layer: rgba(0, 0, 0, 0.022);
     --accent: #0071e3;
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #000000;
+      --bg: #000;
       --text: #f5f5f7;
-      --dim: #86868b;
+      --dim: #98989d;
       --faint: #6e6e73;
-      --hair: rgba(255, 255, 255, 0.14);
+      --hair: rgba(255, 255, 255, 0.13);
+      --layer: rgba(255, 255, 255, 0.035);
       --accent: #2997ff;
     }
   }
@@ -32,126 +34,95 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--font);
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
   [contenteditable]:focus { outline: none; }
 
-  main {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 14vh 32px 24vh;
+  main { max-width: 760px; margin: 0 auto; padding: 10vh 28px 22vh; }
+
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--faint);
+    margin: 0 0 18px 2px;
   }
 
-  /* ---------- Lede ---------- */
-  h1 {
-    font-size: 40px;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    font-weight: 600;
-    margin: 0 0 20px;
-  }
-  .lede {
-    font-size: 21px;
-    line-height: 1.52;
-    letter-spacing: -0.01em;
-    color: var(--dim);
-    margin: 0 0 64px;
-    max-width: 36em;
-  }
+  /* ---------- Tree: one node type, nested ---------- */
+  ul.tree, ul.children { list-style: none; margin: 0; padding: 0; }
+  ul.tree > li + li, ul.children > li + li { margin-top: 7px; }
 
-  /* ---------- Tree ---------- */
-  ul.tree, ul.children {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  li.node {
+    border: 1px solid var(--hair);
+    border-radius: 12px;
+    background: var(--layer);
   }
-  ul.children {
-    margin-left: 11px;
-    padding-left: 20px;
-    border-left: 1px solid var(--hair);
-  }
-  li.node { margin: 0; }
 
   .row {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
     gap: 8px;
-    padding: 5px 0;
-  }
-
-  /* Disclosure: a chevron for nodes with children, a dot for leaves */
-  .twist {
-    appearance: none;
-    -webkit-appearance: none;
-    background: none;
-    border: 0;
-    padding: 0;
-    margin: 0;
-    width: 22px;
-    flex: 0 0 22px;
-    height: 22px;
-    position: relative;
-    top: 3px;
+    padding: 11px 14px;
     cursor: default;
+  }
+  li.node:has(> ul.children > li.node) > .row { cursor: pointer; }
+
+  ul.children { padding: 0 11px 11px 26px; }
+  /* an empty level takes up no room at all */
+  li.node:not(:has(> ul.children > li.node)) > ul.children { display: none; }
+
+  /* Disclosure */
+  .twist {
+    appearance: none; -webkit-appearance: none;
+    background: none; border: 0; padding: 0; margin: 0;
+    width: 16px; flex: 0 0 16px; height: 24px;
+    position: relative;
+    cursor: inherit;
     color: var(--faint);
+    visibility: hidden;
     transition: color 0.15s ease;
   }
+  li.node:has(> ul.children > li.node) > .row > .twist { visibility: visible; }
   .twist::before {
     content: "";
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 4px;
-    height: 4px;
-    margin: -2px 0 0 -2px;
-    border-radius: 50%;
-    background: currentColor;
-    opacity: 0.55;
-  }
-  li.node:has(> ul.children > li.node) > .row > .twist {
-    cursor: pointer;
-  }
-  li.node:has(> ul.children > li.node) > .row > .twist::before {
-    width: 6px;
-    height: 6px;
+    top: 50%; left: 50%;
+    width: 5.5px; height: 5.5px;
     margin: -3px 0 0 -4px;
-    border-radius: 0;
-    background: none;
-    border-right: 1.6px solid currentColor;
-    border-bottom: 1.6px solid currentColor;
-    opacity: 1;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
     transform: rotate(45deg);
     transition: transform 0.2s ease;
   }
-  li.node.collapsed:has(> ul.children > li.node) > .row > .twist::before {
-    transform: rotate(-45deg);
-  }
-  .twist:hover { color: var(--text); }
+  li.node.collapsed > .row > .twist::before { transform: rotate(-45deg); }
+  .row:hover > .twist { color: var(--text); }
   li.node.collapsed > ul.children { display: none; }
 
-  .label { min-width: 0; flex: 1 1 auto; }
+  /* Text — the only content a node carries */
   .title {
+    display: inline-block;
+    max-width: 100%;
     letter-spacing: -0.01em;
+    min-width: 1em;
     min-height: 1.5em;
+    cursor: text;
   }
-  .title:empty::before {
-    content: "Untitled";
-    color: var(--faint);
-  }
-  .note {
-    margin: 2px 0 6px;
-    font-size: 15px;
-    line-height: 1.5;
-    color: var(--dim);
-    max-width: 34em;
-  }
+  .title:empty::before { content: "Untitled"; color: var(--faint); }
 
-  /* Collapsed parents get a quiet count so nothing feels lost */
+  li.node[data-depth="0"] > .row > .title { font-size: 19px; line-height: 1.52; }
+  li.node[data-depth="1"] > .row > .title { font-size: 16px; font-weight: 500; }
+  li.node[data-depth="2"] > .row > .title { font-size: 15px; }
+  li.node.deep > .row > .title { font-size: 14.5px; }
+
   .count {
+    margin-left: auto;
+    order: 1;
+    padding-left: 10px;
     flex: 0 0 auto;
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 24px;
     color: var(--faint);
     font-variant-numeric: tabular-nums;
     opacity: 0;
@@ -159,213 +130,247 @@
   }
   li.node.collapsed > .row > .count { opacity: 1; }
 
-  /* ---------- Dotted add affordance ---------- */
-  li.add { margin: 2px 0 6px; }
+  /* ---------- Dotted: add inside this box ---------- */
+  .row-add {
+    order: 2;
+    appearance: none; -webkit-appearance: none;
+    background: none;
+    flex: 0 0 auto;
+    width: 22px; height: 22px;
+    margin: 1px 0 0 8px;
+    padding: 0;
+    font: inherit; font-size: 14px; line-height: 1;
+    color: var(--faint);
+    border: 1px dashed var(--hair);
+    border-radius: 7px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+  .row:hover > .row-add { opacity: 1; }
+  .row-add:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- Dotted box: add another at this level ---------- */
+  li.add { margin-top: 7px; }
   .add-btn {
-    appearance: none;
-    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    text-align: left;
+    appearance: none; -webkit-appearance: none;
     background: none;
     font: inherit;
-    font-size: 15px;
+    font-size: 14px;
     color: var(--faint);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 12px 4px 7px;
+    padding: 10px 14px;
     border: 1px dashed var(--hair);
-    border-radius: 999px;
+    border-radius: 12px;
     cursor: pointer;
-    opacity: 0.5;
+    opacity: 0.55;
     transition: opacity 0.18s ease, border-color 0.18s ease, color 0.18s ease;
   }
-  .add-btn::before {
-    content: "+";
-    display: block;
-    width: 15px;
-    text-align: center;
-    font-size: 16px;
-    line-height: 1;
-  }
+  .add-btn::before { content: "+"; margin-right: 9px; font-size: 15px; }
   .add-btn span { opacity: 0; transition: opacity 0.18s ease; }
-  li.node:hover > ul.children > li.add > .add-btn,
-  ul.tree:hover > li.add > .add-btn { opacity: 0.75; }
-  .add-btn:hover {
-    opacity: 1;
-    color: var(--accent);
-    border-color: var(--accent);
-  }
+  .add-btn:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
   .add-btn:hover span { opacity: 1; }
 
-  /* ---------- Footer ---------- */
   .hint {
-    margin-top: 72px;
-    padding-top: 20px;
+    margin-top: 44px;
+    padding-top: 18px;
     border-top: 1px solid var(--hair);
     font-size: 13px;
     color: var(--faint);
   }
 
   @media (max-width: 600px) {
-    main { padding: 8vh 20px 16vh; }
-    h1 { font-size: 32px; }
-    .lede { font-size: 19px; margin-bottom: 44px; }
-    ul.children { padding-left: 14px; }
+    main { padding: 6vh 16px 16vh; }
+    ul.children { padding-left: 20px; }
+    li.node[data-depth="0"] > .row > .title { font-size: 17px; }
   }
 </style>
 </head>
 <body>
 <main>
-  <h1 contenteditable="true" spellcheck="false">Choices</h1>
+  <p class="eyebrow">Choices</p>
 
-  <p class="lede" contenteditable="true">
-    Every life is the sum of its decisions, and most of them are made in the dark.
-    Choices is a place to lay a decision out in the open — what you are really choosing
-    between, what you believe, and what you would need to know to be sure. Start at the
-    top and open it up.
-  </p>
-
+  <!--
+    One structure, all the way down: a <li> holds text, and optionally a <ul> of
+    more of the same. Edit this list directly to change the vision.
+  -->
   <ul class="tree" id="tree">
+    <li>
+      Human life is a sequence of decisions, and language models are now the most available
+      help with them. But they hold a person as a few unknown weights — too impoverished an
+      account of anyone. We are building a model of a person rich enough to train against,
+      and using it to evaluate and build aids that actually help someone choose.
 
-    <li class="node">
-      <div class="row">
-        <button class="twist" aria-label="Toggle"></button>
-        <div class="label">
-          <div class="title" contenteditable="true">The problem</div>
-          <p class="note" contenteditable="true">Placeholder — replace with the real framing.</p>
-        </div>
-        <div class="count"></div>
-      </div>
-      <ul class="children">
-        <li class="node">
-          <div class="row">
-            <button class="twist" aria-label="Toggle"></button>
-            <div class="label">
-              <div class="title" contenteditable="true">Decisions get made once and never revisited</div>
-            </div>
-            <div class="count"></div>
-          </div>
-          <ul class="children">
-            <li class="node">
-              <div class="row">
-                <button class="twist" aria-label="Toggle"></button>
-                <div class="label">
-                  <div class="title" contenteditable="true">The reasoning is lost by the time the outcome arrives</div>
-                </div>
-                <div class="count"></div>
-              </div>
-              <ul class="children">
-                <li class="add"><button class="add-btn"><span>Add</span></button></li>
+      <ul>
+        <li>A language model that can reason about a person's choices and preferences
+          <ul>
+            <li>Show that frontier models are poor at helping a person reason about their own choices, with a benchmark that measures it</li>
+            <li>Show that they are poor at helping a person choose at all</li>
+            <li>Train a model that reasons about psychology and preferences
+              <ul>
+                <li>Two readings of the same thing: a reasoning capability, or a bicycle for choosing</li>
               </ul>
             </li>
-            <li class="add"><button class="add-btn"><span>Add</span></button></li>
+            <li>Show with real users that our model helps them choose better</li>
           </ul>
         </li>
-        <li class="node">
-          <div class="row">
-            <button class="twist" aria-label="Toggle"></button>
-            <div class="label">
-              <div class="title" contenteditable="true">Advice arrives without its assumptions attached</div>
-            </div>
-            <div class="count"></div>
-          </div>
-          <ul class="children">
-            <li class="add"><button class="add-btn"><span>Add</span></button></li>
+
+        <li>What we believe, such that the project works if it is true
+          <ul>
+            <li>A person is better off choosing with an aid than without one</li>
+            <li>People make mistakes when they choose</li>
+            <li>People cannot easily say what they want — the articulation problem, and the inversion problem behind it</li>
+            <li>There are structured ways to predict a person</li>
+            <li>If this does not work out, one of these was wrong</li>
           </ul>
         </li>
-        <li class="add"><button class="add-btn"><span>Add</span></button></li>
+
+        <li>There are no verifiers in the behavioral space
+          <ul>
+            <li>Reward environments carried math and code; nothing like them exists for helping a person choose</li>
+            <li>A new way to modularize the human parts of a problem</li>
+            <li>Take people seriously
+              <ul>
+                <li>Heterogeneity between people</li>
+                <li>Complexity within one person</li>
+              </ul>
+            </li>
+            <li>A shift in how decision aids are judged: not one fixed benchmark, but how an aid performs across the space of users</li>
+            <li>A shift in how they are built: an off-the-shelf model converses directly with the vocalizer</li>
+          </ul>
+        </li>
+
+        <li>The pieces we will produce
+          <ul>
+            <li>A neural model of a user
+              <ul>
+                <li>Modular, stable on some dimensions and context-dependent on others</li>
+                <li>Carries known effects — a sunk cost, a standing aversion to price — alongside genuine ambivalence</li>
+              </ul>
+            </li>
+            <li>A vocalizer that says in English what tendencies the model is exhibiting
+              <ul>
+                <li>A blocker, not an information haver: it does not solve the decision, it stands between the aid and the truth</li>
+                <li>It may struggle to pass the network through, and that struggle is itself something to reason about</li>
+              </ul>
+            </li>
+            <li>An inversion that recovers an estimated utility function from the vocalizer</li>
+            <li>A reward function, to improve and build and compare decision aids</li>
+            <li>An evaluation over kinds of users rather than over questions</li>
+          </ul>
+        </li>
+
+        <li>What makes it hard
+          <ul>
+            <li>People are complex and the area is fuzzy</li>
+            <li>What is known about a person is scattered and not in a computable form</li>
+            <li>Reasoning models need something that scores a trace; it is unclear what scores a trace about a person</li>
+            <li>Structure buys a vocalizer we can trust and costs the flexibility that made the model worth having — the balance is the central problem</li>
+            <li>There will always be dimensions of a person the model misses; we need a reason to call it good enough</li>
+            <li>We have to earn the claim that the model is human-like</li>
+          </ul>
+        </li>
+
+        <li>How it could fail
+          <ul>
+            <li>The closer the vocalizer is fit to our own user model, the narrower the contribution</li>
+            <li>The more a domain is taken seriously, the less the model generalizes out of it</li>
+            <li>Learning a person means fighting two problems at once: clarifying what they want, and learning the network</li>
+            <li>Downstream error is hard to attribute between the model and the vocalizer</li>
+            <li>Adding one more aspect of a person turns out not to be modular</li>
+          </ul>
+        </li>
+
+        <li>The order of the work
+          <ul>
+            <li>Can start now: pick a first setting, and gather the aids to measure against</li>
+            <li>Once the setting is fixed: build the neural user model</li>
+            <li>Once the model exists: the inverter, the vocalizer, the reward function</li>
+            <li>Once the reward function exists: benchmark the aids, then train our own</li>
+            <li>Separately, and on its own clock: choose the domain that carries the result</li>
+          </ul>
+        </li>
+
+        <li>What to resolve first
+          <ul>
+            <li>How each piece is actually built</li>
+            <li>Which dimensions of a person pay for themselves</li>
+            <li>Which setting makes the result undeniable</li>
+          </ul>
+        </li>
+
+        <li>Where the wow is
+          <ul>
+            <li>Behavior stops being too fuzzy to touch and becomes something we make technical progress on</li>
+            <li>A step change rather than one more structural model that captures one effect</li>
+            <li>Still open: how we prove it, and where</li>
+          </ul>
+        </li>
       </ul>
     </li>
-
-    <li class="node">
-      <div class="row">
-        <button class="twist" aria-label="Toggle"></button>
-        <div class="label">
-          <div class="title" contenteditable="true">What we are building</div>
-        </div>
-        <div class="count"></div>
-      </div>
-      <ul class="children">
-        <li class="node">
-          <div class="row">
-            <button class="twist" aria-label="Toggle"></button>
-            <div class="label">
-              <div class="title" contenteditable="true">A decision is a document, not a moment</div>
-              <p class="note" contenteditable="true">Placeholder.</p>
-            </div>
-            <div class="count"></div>
-          </div>
-          <ul class="children">
-            <li class="add"><button class="add-btn"><span>Add</span></button></li>
-          </ul>
-        </li>
-        <li class="node">
-          <div class="row">
-            <button class="twist" aria-label="Toggle"></button>
-            <div class="label">
-              <div class="title" contenteditable="true">Structure that goes as deep as the thinking does</div>
-            </div>
-            <div class="count"></div>
-          </div>
-          <ul class="children">
-            <li class="add"><button class="add-btn"><span>Add</span></button></li>
-          </ul>
-        </li>
-        <li class="add"><button class="add-btn"><span>Add</span></button></li>
-      </ul>
-    </li>
-
-    <li class="node">
-      <div class="row">
-        <button class="twist" aria-label="Toggle"></button>
-        <div class="label">
-          <div class="title" contenteditable="true">Principles</div>
-        </div>
-        <div class="count"></div>
-      </div>
-      <ul class="children">
-        <li class="node">
-          <div class="row">
-            <button class="twist" aria-label="Toggle"></button>
-            <div class="label">
-              <div class="title" contenteditable="true">Nothing on the page that is not load-bearing</div>
-            </div>
-            <div class="count"></div>
-          </div>
-          <ul class="children">
-            <li class="add"><button class="add-btn"><span>Add</span></button></li>
-          </ul>
-        </li>
-        <li class="add"><button class="add-btn"><span>Add</span></button></li>
-      </ul>
-    </li>
-
-    <li class="add"><button class="add-btn"><span>Add</span></button></li>
   </ul>
 
-  <p class="hint">Click a chevron to open or close. Click any text to edit it. Return makes a sibling; Delete on empty text removes it. Edits live in the page — save them back into <code>vision.html</code> to keep them.</p>
+  <p class="hint">Click a box to open it, or its text to edit. The dashed <b>+</b> on a box adds one inside it; the dashed box at the end of a level adds one beside. Return also adds one beside, Delete on empty text removes it. Edits live in the page — write them back into <code>vision.html</code> to keep them.</p>
 </main>
 
 <script>
 (function () {
   var tree = document.getElementById('tree');
+  var OPEN_DEPTH = 0; // boxes deeper than this start closed
 
-  function makeNode() {
+  function addSlot() {
     var li = document.createElement('li');
-    li.className = 'node';
-    li.innerHTML =
-      '<div class="row">' +
-        '<button class="twist" aria-label="Toggle"></button>' +
-        '<div class="label"><div class="title" contenteditable="true"></div></div>' +
-        '<div class="count"></div>' +
-      '</div>' +
-      '<ul class="children">' +
-        '<li class="add"><button class="add-btn"><span>Add</span></button></li>' +
-      '</ul>';
+    li.className = 'add';
+    li.innerHTML = '<button class="add-btn"><span>Add</span></button>';
     return li;
   }
 
+  /* Turn a plain <li>text<ul>…</ul></li> into a box. Runs on authored markup
+     and on anything added later, so there is only ever one kind of node. */
+  function decorate(li, depth) {
+    var kids = li.querySelector(':scope > ul');
+    var text = '';
+    var n = li.firstChild;
+    while (n) {
+      var next = n.nextSibling;
+      if (n !== kids) { text += n.textContent; li.removeChild(n); }
+      n = next;
+    }
+    text = text.replace(/\s+/g, ' ').trim();
+
+    var row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML =
+      '<button class="twist" aria-label="Open or close"></button>' +
+      '<div class="title" contenteditable="true"></div>' +
+      '<div class="count"></div>' +
+      '<button class="row-add" aria-label="Add inside">+</button>';
+    row.querySelector('.title').textContent = text;
+
+    if (!kids) { kids = document.createElement('ul'); }
+    kids.className = 'children';
+    kids.appendChild(addSlot());
+
+    li.textContent = '';
+    li.appendChild(row);
+    li.appendChild(kids);
+    li.className = 'node' + (depth >= 3 ? ' deep' : '');
+    li.dataset.depth = depth;
+
+    var children = kids.querySelectorAll(':scope > li:not(.add)');
+    for (var i = 0; i < children.length; i++) decorate(children[i], depth + 1);
+    if (depth > OPEN_DEPTH && children.length) li.classList.add('collapsed');
+    return li;
+  }
+
+  function makeNode(depth) {
+    return decorate(document.createElement('li'), depth);
+  }
+
   function focusTitle(li) {
-    var el = li.querySelector('.title');
+    var el = li.querySelector(':scope > .row > .title');
     el.focus();
     var r = document.createRange();
     r.selectNodeContents(el);
@@ -378,29 +383,37 @@
   function counts() {
     var nodes = tree.querySelectorAll('li.node');
     for (var i = 0; i < nodes.length; i++) {
-      var kids = nodes[i].querySelectorAll(':scope > ul.children > li.node').length;
-      nodes[i].querySelector(':scope > .row > .count').textContent = kids ? kids : '';
+      var k = nodes[i].querySelectorAll(':scope > ul.children > li.node').length;
+      nodes[i].querySelector(':scope > .row > .count').textContent = k ? k : '';
     }
   }
 
+  function depthOf(li) { return parseInt(li.dataset.depth, 10) || 0; }
+
+  function insertInto(parent, before) {
+    var list = before ? before.parentNode : parent.querySelector(':scope > ul.children');
+    var depth = parent ? depthOf(parent) + 1 : 0;
+    var li = makeNode(depth);
+    list.insertBefore(li, before || list.querySelector(':scope > li.add'));
+    if (parent) parent.classList.remove('collapsed');
+    counts();
+    focusTitle(li);
+  }
+
   tree.addEventListener('click', function (e) {
+    var rowAdd = e.target.closest('.row-add');
+    if (rowAdd) { insertInto(rowAdd.closest('li.node'), null); return; }
     var add = e.target.closest('.add-btn');
     if (add) {
       var slot = add.closest('li.add');
-      var li = makeNode();
-      slot.parentNode.insertBefore(li, slot);
-      var parent = slot.closest('li.node');
-      if (parent) parent.classList.remove('collapsed');
-      counts();
-      focusTitle(li);
+      insertInto(slot.parentNode.closest('li.node'), slot);
       return;
     }
-    var twist = e.target.closest('.twist');
-    if (twist) {
-      var node = twist.closest('li.node');
-      if (node.querySelector(':scope > ul.children > li.node')) {
-        node.classList.toggle('collapsed');
-      }
+    if (e.target.closest('.title')) return; // clicking text means editing it
+    var row = e.target.closest('.row');
+    if (row) {
+      var node = row.parentNode;
+      if (node.querySelector(':scope > ul.children > li.node')) node.classList.toggle('collapsed');
     }
   });
 
@@ -411,7 +424,7 @@
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      var sib = makeNode();
+      var sib = makeNode(depthOf(li));
       li.parentNode.insertBefore(sib, li.nextSibling);
       counts();
       focusTitle(sib);
@@ -420,6 +433,7 @@
 
     if ((e.key === 'Backspace' || e.key === 'Delete') && title.textContent.trim() === '') {
       if (li.querySelector(':scope > ul.children > li.node')) return;
+      if (li.parentNode === tree && tree.querySelectorAll(':scope > li.node').length < 2) return;
       e.preventDefault();
       var prev = li.previousElementSibling;
       var parent = li.parentNode.closest('li.node');
@@ -428,9 +442,9 @@
       if (prev && prev.classList.contains('node')) {
         var deepest = prev;
         while (!deepest.classList.contains('collapsed')) {
-          var kids = deepest.querySelectorAll(':scope > ul.children > li.node');
-          if (!kids.length) break;
-          deepest = kids[kids.length - 1];
+          var k = deepest.querySelectorAll(':scope > ul.children > li.node');
+          if (!k.length) break;
+          deepest = k[k.length - 1];
         }
         focusTitle(deepest);
       } else if (parent) {
@@ -440,6 +454,10 @@
   });
 
   tree.addEventListener('input', counts);
+
+  var roots = tree.querySelectorAll(':scope > li');
+  for (var i = 0; i < roots.length; i++) decorate(roots[i], 0);
+  tree.appendChild(addSlot());
   counts();
 })();
 </script>
