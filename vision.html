@@ -210,10 +210,6 @@
   }
   li.node.collapsed > .row > .count { opacity: 1; }
 
-  /* ---------- Four to a level: a full level offers no way in ---------- */
-  li.node:has(> ul.children > li.node:nth-of-type(4)) > .row > .row-add,
-  ul.children:has(> li.node:nth-of-type(4)) > li.add { display: none; }
-
   /* ---------- Dotted: add inside this box ---------- */
   .row-add {
     order: 2;
@@ -274,8 +270,38 @@
     background: var(--tint);
     opacity: 0.45;
   }
-  ul.rail > li { position: relative; padding: 0 0 20px; }
+  ul.rail > li { position: relative; padding: 0 0 18px; }
   ul.rail > li:last-child { padding-bottom: 0; }
+
+  /* A belief carries its own line for whatever hangs beneath it */
+  ul.rail.sub {
+    padding: 14px 0 0 22px;
+  }
+  ul.rail.sub::before { top: 24px; bottom: 10px; left: 7px; }
+  li.belief:not(:has(> ul.rail > li.belief)) > ul.rail { display: none; }
+  ul.rail.sub > li { padding-bottom: 14px; }
+  ul.rail.sub .dot { width: 7px; height: 7px; left: -19.5px; top: 6.5px; }
+  ul.rail.sub .belief-text { font-size: 14px; }
+
+  .belief-row { display: flex; align-items: flex-start; gap: 8px; }
+
+  .belief-add {
+    appearance: none; -webkit-appearance: none;
+    background: none;
+    flex: 0 0 auto;
+    margin-top: 1px;
+    width: 20px; height: 20px;
+    padding: 0;
+    font: inherit; font-size: 13px; line-height: 1;
+    color: var(--tint);
+    border: 1px dashed var(--edge);
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+  .belief-row:hover > .belief-add { opacity: 1; }
+  .belief-add:hover { color: var(--accent); border-color: var(--accent); }
 
   .dot {
     position: absolute;
@@ -285,7 +311,8 @@
     background: var(--tint);
   }
   .belief-text {
-    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: 14.5px;
     line-height: 1.5;
     letter-spacing: -0.005em;
@@ -310,6 +337,10 @@
   li.rail-add { opacity: 0.55; transition: opacity 0.18s ease; }
   li.rail-add:hover { opacity: 1; }
   li.rail-add:hover .dot-add { border-color: var(--accent); }
+  /* nested add rows stay as a ghost dot until you reach for them */
+  ul.rail.sub > li.rail-add .rail-add-label { opacity: 0; transition: opacity 0.18s ease; }
+  ul.rail.sub > li.rail-add:hover .rail-add-label { opacity: 1; }
+
   .rail-add-label {
     font-size: 14.5px;
     color: var(--tint);
@@ -475,9 +506,8 @@
     if (saved.beliefs) {
       railEl.textContent = '';
       for (var bi = 0; bi < saved.beliefs.length; bi++) {
-        var bl = document.createElement('li');
-        bl.textContent = saved.beliefs[bi];
-        railEl.appendChild(bl);
+        railEl.appendChild(liFrom(typeof saved.beliefs[bi] === 'string'
+          ? { t: saved.beliefs[bi] } : saved.beliefs[bi]));
       }
     }
     if (saved.title) titleEl.textContent = saved.title;
@@ -488,7 +518,6 @@
     }
   }
   var OPEN_DEPTH = 0; // boxes deeper than this start closed
-  var MAX = 4;        // boxes allowed at any one level
 
   function addSlot() {
     var li = document.createElement('li');
@@ -561,13 +590,8 @@
 
   function depthOf(li) { return parseInt(li.dataset.depth, 10) || 0; }
 
-  function roomIn(list) {
-    return list.querySelectorAll(':scope > li.node').length < MAX;
-  }
-
   function insertInto(parent, before) {
     var list = before ? before.parentNode : parent.querySelector(':scope > ul.children');
-    if (!roomIn(list)) return;
     var li = makeNode(depthOf(parent) + 1);
     list.insertBefore(li, before || list.querySelector(':scope > li.add'));
     parent.classList.remove('collapsed');
@@ -600,7 +624,6 @@
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (!roomIn(li.parentNode)) return;
       var sib = makeNode(depthOf(li));
       li.parentNode.insertBefore(sib, li.nextSibling);
       counts();
@@ -642,35 +665,74 @@
   }
   if (saved && saved.tree) applyOpen(tree.querySelector(':scope > li.node'), saved.tree);
 
-  /* ---------- Beliefs: the same text, strung on a line ---------- */
+  /* ---------- Beliefs: the same text, strung on a line, nestable ---------- */
   var rail = document.getElementById('beliefs');
 
-  function makeBelief(text) {
+  function addRow() {
     var li = document.createElement('li');
-    li.innerHTML = '<span class="dot"></span><div class="belief-text" contenteditable="true"></div>';
-    li.querySelector('.belief-text').textContent = text || '';
+    li.className = 'rail-add';
+    li.innerHTML = '<button class="dot-add" aria-label="Add a belief"></button>' +
+                   '<span class="rail-add-label">Add</span>';
     return li;
   }
 
-  var authored = rail.querySelectorAll(':scope > li');
-  for (var j = 0; j < authored.length; j++) {
-    rail.replaceChild(makeBelief(authored[j].textContent.replace(/\s+/g, ' ').trim()), authored[j]);
+  /* Same shape as the tree: an authored <li>text<ul>…</ul></li> becomes a dot
+     on a line, with a line of its own for whatever hangs beneath it. */
+  function decorateBelief(li, depth) {
+    var kids = li.querySelector(':scope > ul');
+    var text = '';
+    var n = li.firstChild;
+    while (n) {
+      var next = n.nextSibling;
+      if (n !== kids) { text += n.textContent; li.removeChild(n); }
+      n = next;
+    }
+
+    var row = document.createElement('div');
+    row.className = 'belief-row';
+    row.innerHTML = '<div class="belief-text" contenteditable="true"></div>' +
+                    '<button class="belief-add" aria-label="Add inside">+</button>';
+    row.querySelector('.belief-text').textContent = text.replace(/\s+/g, ' ').trim();
+
+    if (!kids) { kids = document.createElement('ul'); }
+    kids.className = 'rail sub';
+    kids.appendChild(addRow());
+
+    li.textContent = '';
+    li.innerHTML = '<span class="dot"></span>';
+    li.appendChild(row);
+    li.appendChild(kids);
+    li.className = 'belief';
+    li.dataset.depth = depth;
+
+    var children = kids.querySelectorAll(':scope > li:not(.rail-add)');
+    for (var i = 0; i < children.length; i++) decorateBelief(children[i], depth + 1);
+    return li;
   }
 
-  var railAdd = document.createElement('li');
-  railAdd.className = 'rail-add';
-  railAdd.innerHTML = '<button class="dot-add" aria-label="Add a belief"></button>' +
-                      '<span class="rail-add-label">Add</span>';
-  rail.appendChild(railAdd);
+  function makeBelief(depth) {
+    return decorateBelief(document.createElement('li'), depth);
+  }
 
-  function addBelief(before) {
-    var li = makeBelief('');
-    rail.insertBefore(li, before || railAdd);
-    caretTo(li.querySelector('.belief-text'));
+  var authored = rail.querySelectorAll(':scope > li');
+  for (var j = 0; j < authored.length; j++) decorateBelief(authored[j], 0);
+  rail.appendChild(addRow());
+
+  function addBelief(list, before) {
+    var host = list.closest('li.belief');
+    var li = makeBelief(host ? parseInt(host.dataset.depth, 10) + 1 : 0);
+    list.insertBefore(li, before || list.querySelector(':scope > li.rail-add'));
+    caretTo(li.querySelector(':scope > .belief-row > .belief-text'));
   }
 
   rail.addEventListener('click', function (e) {
-    if (e.target.closest('.dot-add') || e.target.closest('.rail-add-label')) addBelief(null);
+    var inside = e.target.closest('.belief-add');
+    if (inside) {
+      addBelief(inside.closest('li.belief').querySelector(':scope > ul.rail'), null);
+      return;
+    }
+    var beside = e.target.closest('.rail-add');
+    if (beside) addBelief(beside.parentNode, beside);
   });
 
   /* ---------- Save after anything changes ---------- */
@@ -682,15 +744,22 @@
     return out;
   }
 
+  function beliefData(li) {
+    var out = { t: li.querySelector(':scope > .belief-row > .belief-text').textContent, c: [] };
+    var kids = li.querySelectorAll(':scope > ul.rail > li.belief');
+    for (var i = 0; i < kids.length; i++) out.c.push(beliefData(kids[i]));
+    return out;
+  }
+
   var pending;
   function save() {
     if (!store) return;
     clearTimeout(pending);
     pending = setTimeout(function () {
       try {
-        var texts = rail.querySelectorAll(':scope > li:not(.rail-add) > .belief-text');
+        var tops = rail.querySelectorAll(':scope > li.belief');
         var beliefs = [];
-        for (var i = 0; i < texts.length; i++) beliefs.push(texts[i].textContent);
+        for (var i = 0; i < tops.length; i++) beliefs.push(beliefData(tops[i]));
         var names = [];
         for (var j = 0; j < nameEls.length; j++) names.push(nameEls[j].textContent);
         store.setItem(KEY, JSON.stringify({
@@ -712,18 +781,26 @@
   rail.addEventListener('keydown', function (e) {
     var t = e.target.closest('.belief-text');
     if (!t) return;
-    var li = t.parentNode;
+    var li = t.closest('li.belief');
+    var list = li.parentNode;
+
     if (e.key === 'Enter') {
       e.preventDefault();
-      addBelief(li.nextSibling);
+      addBelief(list, li.nextSibling);
       return;
     }
     if ((e.key === 'Backspace' || e.key === 'Delete') && t.textContent.trim() === '') {
-      if (rail.querySelectorAll(':scope > li:not(.rail-add)').length < 2) return;
+      if (li.querySelector(':scope > ul.rail > li.belief')) return;
+      if (list === rail && rail.querySelectorAll(':scope > li.belief').length < 2) return;
       e.preventDefault();
       var prev = li.previousElementSibling;
-      rail.removeChild(li);
-      if (prev) caretTo(prev.querySelector('.belief-text'));
+      var parent = list.closest('li.belief');
+      list.removeChild(li);
+      if (prev && prev.classList.contains('belief')) {
+        caretTo(prev.querySelector(':scope > .belief-row > .belief-text'));
+      } else if (parent) {
+        caretTo(parent.querySelector(':scope > .belief-row > .belief-text'));
+      }
     }
   });
 })();
