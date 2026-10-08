@@ -130,6 +130,11 @@
   }
   li.node.collapsed > .row > .count { opacity: 1; }
 
+  /* ---------- Four to a level: a full level offers no way in ---------- */
+  li.node:has(> ul.children > li.node:nth-of-type(4)) > .row > .row-add,
+  ul.children:has(> li.node:nth-of-type(4)) > li.add,
+  ul.tree:has(> li.node:nth-of-type(4)) > li.add { display: none; }
+
   /* ---------- Dotted: add inside this box ---------- */
   .row-add {
     order: 2;
@@ -198,127 +203,84 @@
   -->
   <ul class="tree" id="tree">
     <li>
-      Human life is a sequence of decisions, and language models are now the most available
-      help with them. But they hold a person as a few unknown weights — too impoverished an
-      account of anyone. We are building a model of a person rich enough to train against,
-      and using it to evaluate and build aids that actually help someone choose.
+      Build a language model that can reason about a person's choices and preferences.
+      Today's decision aids hold a person as a few unknown weights — too impoverished an
+      account of anyone. We will build a model of a person rich enough to train against,
+      and use it to evaluate and build aids that actually help someone choose.
 
       <ul>
-        <li>A language model that can reason about a person's choices and preferences
+        <li>Show that today's models cannot help a person choose
           <ul>
-            <li>Show that frontier models are poor at helping a person reason about their own choices, with a benchmark that measures it</li>
-            <li>Show that they are poor at helping a person choose at all</li>
-            <li>Train a model that reasons about psychology and preferences
+            <li>Choose the first setting to work in, and the decisions it covers</li>
+            <li>Build a benchmark that measures how well a model helps a person reason about their own choices</li>
+            <li>Score frontier models on it, and show they do poorly
               <ul>
-                <li>Two readings of the same thing: a reasoning capability, or a bicycle for choosing</li>
+                <li>Gather the aids built for deciding — DELLMa, Decision Flow, Decisive — and score them alongside</li>
+                <li>Reproduce the ones we cannot run, or get them from their authors</li>
               </ul>
             </li>
+            <li>Show they fail at helping a person choose, not only at helping them reason</li>
+          </ul>
+        </li>
+
+        <li>Build a neural model of a user
+          <ul>
+            <li>Give it dimensions that hold steady and dimensions that move with context</li>
+            <li>Put known effects into it — a sunk cost, a standing aversion to price — alongside real ambivalence</li>
+            <li>Make adding one more dimension of a person a modular operation
+              <ul>
+                <li>Pick the dimensions that pay for themselves first</li>
+                <li>Hold the line between domain-agnostic psychology and a domain taken seriously</li>
+              </ul>
+            </li>
+            <li>Earn the claim that the model is human-like enough to grade an aid against</li>
+          </ul>
+        </li>
+
+        <li>Build the verifier that trains a model to reason about people
+          <ul>
+            <li>Build a vocalizer that says in English what tendencies the user model is exhibiting
+              <ul>
+                <li>Design each mechanism so the vocalizer can be trusted without leaning on probes</li>
+                <li>Let it voice its own uncertainty instead of passing the network straight through</li>
+                <li>Keep it general enough that it is not just a fitting of our own user model</li>
+              </ul>
+            </li>
+            <li>Invert the vocalizer to recover an estimated utility function
+              <ul>
+                <li>Settle whether to invert at all, or read utilities off the model directly</li>
+              </ul>
+            </li>
+            <li>Turn that utility function into a reward environment for behavior</li>
+            <li>Train a reasoning model against it, and beat every aid we benchmarked
+              <ul>
+                <li>Separate the error the user model caused from the error the vocalizer caused</li>
+                <li>Teach it to clarify what a person cannot articulate while it learns what they want</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+
+        <li>Land it where it counts
+          <ul>
+            <li>Grade every aid across the space of users rather than on one fixed benchmark</li>
+            <li>Choose the domain that carries the result, and win in it</li>
             <li>Show with real users that our model helps them choose better</li>
-          </ul>
-        </li>
-
-        <li>What we believe, such that the project works if it is true
-          <ul>
-            <li>A person is better off choosing with an aid than without one</li>
-            <li>People make mistakes when they choose</li>
-            <li>People cannot easily say what they want — the articulation problem, and the inversion problem behind it</li>
-            <li>There are structured ways to predict a person</li>
-            <li>If this does not work out, one of these was wrong</li>
-          </ul>
-        </li>
-
-        <li>There are no verifiers in the behavioral space
-          <ul>
-            <li>Reward environments carried math and code; nothing like them exists for helping a person choose</li>
-            <li>A new way to modularize the human parts of a problem</li>
-            <li>Take people seriously
-              <ul>
-                <li>Heterogeneity between people</li>
-                <li>Complexity within one person</li>
-              </ul>
-            </li>
-            <li>A shift in how decision aids are judged: not one fixed benchmark, but how an aid performs across the space of users</li>
-            <li>A shift in how they are built: an off-the-shelf model converses directly with the vocalizer</li>
-          </ul>
-        </li>
-
-        <li>The pieces we will produce
-          <ul>
-            <li>A neural model of a user
-              <ul>
-                <li>Modular, stable on some dimensions and context-dependent on others</li>
-                <li>Carries known effects — a sunk cost, a standing aversion to price — alongside genuine ambivalence</li>
-              </ul>
-            </li>
-            <li>A vocalizer that says in English what tendencies the model is exhibiting
-              <ul>
-                <li>A blocker, not an information haver: it does not solve the decision, it stands between the aid and the truth</li>
-                <li>It may struggle to pass the network through, and that struggle is itself something to reason about</li>
-              </ul>
-            </li>
-            <li>An inversion that recovers an estimated utility function from the vocalizer</li>
-            <li>A reward function, to improve and build and compare decision aids</li>
-            <li>An evaluation over kinds of users rather than over questions</li>
-          </ul>
-        </li>
-
-        <li>What makes it hard
-          <ul>
-            <li>People are complex and the area is fuzzy</li>
-            <li>What is known about a person is scattered and not in a computable form</li>
-            <li>Reasoning models need something that scores a trace; it is unclear what scores a trace about a person</li>
-            <li>Structure buys a vocalizer we can trust and costs the flexibility that made the model worth having — the balance is the central problem</li>
-            <li>There will always be dimensions of a person the model misses; we need a reason to call it good enough</li>
-            <li>We have to earn the claim that the model is human-like</li>
-          </ul>
-        </li>
-
-        <li>How it could fail
-          <ul>
-            <li>The closer the vocalizer is fit to our own user model, the narrower the contribution</li>
-            <li>The more a domain is taken seriously, the less the model generalizes out of it</li>
-            <li>Learning a person means fighting two problems at once: clarifying what they want, and learning the network</li>
-            <li>Downstream error is hard to attribute between the model and the vocalizer</li>
-            <li>Adding one more aspect of a person turns out not to be modular</li>
-          </ul>
-        </li>
-
-        <li>The order of the work
-          <ul>
-            <li>Can start now: pick a first setting, and gather the aids to measure against</li>
-            <li>Once the setting is fixed: build the neural user model</li>
-            <li>Once the model exists: the inverter, the vocalizer, the reward function</li>
-            <li>Once the reward function exists: benchmark the aids, then train our own</li>
-            <li>Separately, and on its own clock: choose the domain that carries the result</li>
-          </ul>
-        </li>
-
-        <li>What to resolve first
-          <ul>
-            <li>How each piece is actually built</li>
-            <li>Which dimensions of a person pay for themselves</li>
-            <li>Which setting makes the result undeniable</li>
-          </ul>
-        </li>
-
-        <li>Where the wow is
-          <ul>
-            <li>Behavior stops being too fuzzy to touch and becomes something we make technical progress on</li>
-            <li>A step change rather than one more structural model that captures one effect</li>
-            <li>Still open: how we prove it, and where</li>
+            <li>Write it up so the field cannot file it away as prompting a user persona</li>
           </ul>
         </li>
       </ul>
     </li>
   </ul>
 
-  <p class="hint">Click a box to open it, or its text to edit. The dashed <b>+</b> on a box adds one inside it; the dashed box at the end of a level adds one beside. Return also adds one beside, Delete on empty text removes it. Edits live in the page — write them back into <code>vision.html</code> to keep them.</p>
+  <p class="hint">Click a box to open it, or its text to edit. The dashed <b>+</b> on a box adds one inside it; the dashed box at the end of a level adds one beside. Return also adds one beside, Delete on empty text removes it. Four boxes to a level, at most — a full level stops offering. Edits live in the page — write them back into <code>vision.html</code> to keep them.</p>
 </main>
 
 <script>
 (function () {
   var tree = document.getElementById('tree');
   var OPEN_DEPTH = 0; // boxes deeper than this start closed
+  var MAX = 4;        // boxes allowed at any one level
 
   function addSlot() {
     var li = document.createElement('li');
@@ -390,8 +352,13 @@
 
   function depthOf(li) { return parseInt(li.dataset.depth, 10) || 0; }
 
+  function roomIn(list) {
+    return list.querySelectorAll(':scope > li.node').length < MAX;
+  }
+
   function insertInto(parent, before) {
     var list = before ? before.parentNode : parent.querySelector(':scope > ul.children');
+    if (!roomIn(list)) return;
     var depth = parent ? depthOf(parent) + 1 : 0;
     var li = makeNode(depth);
     list.insertBefore(li, before || list.querySelector(':scope > li.add'));
@@ -424,6 +391,7 @@
 
     if (e.key === 'Enter') {
       e.preventDefault();
+      if (!roomIn(li.parentNode)) return;
       var sib = makeNode(depthOf(li));
       li.parentNode.insertBefore(sib, li.nextSibling);
       counts();
