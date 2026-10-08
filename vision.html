@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choices — Vision</title>
+<style>
+  :root {
+    --bg: #fbfbfd;
+    --text: #1d1d1f;
+    --dim: #6e6e73;
+    --faint: #a1a1a6;
+    --hair: rgba(0, 0, 0, 0.10);
+    --accent: #0071e3;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --text: #f5f5f7;
+      --dim: #86868b;
+      --faint: #6e6e73;
+      --hair: rgba(255, 255, 255, 0.14);
+      --accent: #2997ff;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  [contenteditable]:focus { outline: none; }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 14vh 32px 24vh;
+  }
+
+  /* ---------- Lede ---------- */
+  h1 {
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    margin: 0 0 20px;
+  }
+  .lede {
+    font-size: 21px;
+    line-height: 1.52;
+    letter-spacing: -0.01em;
+    color: var(--dim);
+    margin: 0 0 64px;
+    max-width: 36em;
+  }
+
+  /* ---------- Tree ---------- */
+  ul.tree, ul.children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  ul.children {
+    margin-left: 11px;
+    padding-left: 20px;
+    border-left: 1px solid var(--hair);
+  }
+  li.node { margin: 0; }
+
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 5px 0;
+  }
+
+  /* Disclosure: a chevron for nodes with children, a dot for leaves */
+  .twist {
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    width: 22px;
+    flex: 0 0 22px;
+    height: 22px;
+    position: relative;
+    top: 3px;
+    cursor: default;
+    color: var(--faint);
+    transition: color 0.15s ease;
+  }
+  .twist::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    margin: -2px 0 0 -2px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.55;
+  }
+  li.node:has(> ul.children > li.node) > .row > .twist {
+    cursor: pointer;
+  }
+  li.node:has(> ul.children > li.node) > .row > .twist::before {
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -4px;
+    border-radius: 0;
+    background: none;
+    border-right: 1.6px solid currentColor;
+    border-bottom: 1.6px solid currentColor;
+    opacity: 1;
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+  }
+  li.node.collapsed:has(> ul.children > li.node) > .row > .twist::before {
+    transform: rotate(-45deg);
+  }
+  .twist:hover { color: var(--text); }
+  li.node.collapsed > ul.children { display: none; }
+
+  .label { min-width: 0; flex: 1 1 auto; }
+  .title {
+    letter-spacing: -0.01em;
+    min-height: 1.5em;
+  }
+  .title:empty::before {
+    content: "Untitled";
+    color: var(--faint);
+  }
+  .note {
+    margin: 2px 0 6px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--dim);
+    max-width: 34em;
+  }
+
+  /* Collapsed parents get a quiet count so nothing feels lost */
+  .count {
+    flex: 0 0 auto;
+    font-size: 13px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  li.node.collapsed > .row > .count { opacity: 1; }
+
+  /* ---------- Dotted add affordance ---------- */
+  li.add { margin: 2px 0 6px; }
+  .add-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    font: inherit;
+    font-size: 15px;
+    color: var(--faint);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 7px;
+    border: 1px dashed var(--hair);
+    border-radius: 999px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+  .add-btn::before {
+    content: "+";
+    display: block;
+    width: 15px;
+    text-align: center;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .add-btn span { opacity: 0; transition: opacity 0.18s ease; }
+  li.node:hover > ul.children > li.add > .add-btn,
+  ul.tree:hover > li.add > .add-btn { opacity: 0.75; }
+  .add-btn:hover {
+    opacity: 1;
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .add-btn:hover span { opacity: 1; }
+
+  /* ---------- Footer ---------- */
+  .hint {
+    margin-top: 72px;
+    padding-top: 20px;
+    border-top: 1px solid var(--hair);
+    font-size: 13px;
+    color: var(--faint);
+  }
+
+  @media (max-width: 600px) {
+    main { padding: 8vh 20px 16vh; }
+    h1 { font-size: 32px; }
+    .lede { font-size: 19px; margin-bottom: 44px; }
+    ul.children { padding-left: 14px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1 contenteditable="true" spellcheck="false">Choices</h1>
+
+  <p class="lede" contenteditable="true">
+    Every life is the sum of its decisions, and most of them are made in the dark.
+    Choices is a place to lay a decision out in the open — what you are really choosing
+    between, what you believe, and what you would need to know to be sure. Start at the
+    top and open it up.
+  </p>
+
+  <ul class="tree" id="tree">
+
+    <li class="node">
+      <div class="row">
+        <button class="twist" aria-label="Toggle"></button>
+        <div class="label">
+          <div class="title" contenteditable="true">The problem</div>
+          <p class="note" contenteditable="true">Placeholder — replace with the real framing.</p>
+        </div>
+        <div class="count"></div>
+      </div>
+      <ul class="children">
+        <li class="node">
+          <div class="row">
+            <button class="twist" aria-label="Toggle"></button>
+            <div class="label">
+              <div class="title" contenteditable="true">Decisions get made once and never revisited</div>
+            </div>
+            <div class="count"></div>
+          </div>
+          <ul class="children">
+            <li class="node">
+              <div class="row">
+                <button class="twist" aria-label="Toggle"></button>
+                <div class="label">
+                  <div class="title" contenteditable="true">The reasoning is lost by the time the outcome arrives</div>
+                </div>
+                <div class="count"></div>
+              </div>
+              <ul class="children">
+                <li class="add"><button class="add-btn"><span>Add</span></button></li>
+              </ul>
+            </li>
+            <li class="add"><button class="add-btn"><span>Add</span></button></li>
+          </ul>
+        </li>
+        <li class="node">
+          <div class="row">
+            <button class="twist" aria-label="Toggle"></button>
+            <div class="label">
+              <div class="title" contenteditable="true">Advice arrives without its assumptions attached</div>
+            </div>
+            <div class="count"></div>
+          </div>
+          <ul class="children">
+            <li class="add"><button class="add-btn"><span>Add</span></button></li>
+          </ul>
+        </li>
+        <li class="add"><button class="add-btn"><span>Add</span></button></li>
+      </ul>
+    </li>
+
+    <li class="node">
+      <div class="row">
+        <button class="twist" aria-label="Toggle"></button>
+        <div class="label">
+          <div class="title" contenteditable="true">What we are building</div>
+        </div>
+        <div class="count"></div>
+      </div>
+      <ul class="children">
+        <li class="node">
+          <div class="row">
+            <button class="twist" aria-label="Toggle"></button>
+            <div class="label">
+              <div class="title" contenteditable="true">A decision is a document, not a moment</div>
+              <p class="note" contenteditable="true">Placeholder.</p>
+            </div>
+            <div class="count"></div>
+          </div>
+          <ul class="children">
+            <li class="add"><button class="add-btn"><span>Add</span></button></li>
+          </ul>
+        </li>
+        <li class="node">
+          <div class="row">
+            <button class="twist" aria-label="Toggle"></button>
+            <div class="label">
+              <div class="title" contenteditable="true">Structure that goes as deep as the thinking does</div>
+            </div>
+            <div class="count"></div>
+          </div>
+          <ul class="children">
+            <li class="add"><button class="add-btn"><span>Add</span></button></li>
+          </ul>
+        </li>
+        <li class="add"><button class="add-btn"><span>Add</span></button></li>
+      </ul>
+    </li>
+
+    <li class="node">
+      <div class="row">
+        <button class="twist" aria-label="Toggle"></button>
+        <div class="label">
+          <div class="title" contenteditable="true">Principles</div>
+        </div>
+        <div class="count"></div>
+      </div>
+      <ul class="children">
+        <li class="node">
+          <div class="row">
+            <button class="twist" aria-label="Toggle"></button>
+            <div class="label">
+              <div class="title" contenteditable="true">Nothing on the page that is not load-bearing</div>
+            </div>
+            <div class="count"></div>
+          </div>
+          <ul class="children">
+            <li class="add"><button class="add-btn"><span>Add</span></button></li>
+          </ul>
+        </li>
+        <li class="add"><button class="add-btn"><span>Add</span></button></li>
+      </ul>
+    </li>
+
+    <li class="add"><button class="add-btn"><span>Add</span></button></li>
+  </ul>
+
+  <p class="hint">Click a chevron to open or close. Click any text to edit it. Return makes a sibling; Delete on empty text removes it. Edits live in the page — save them back into <code>vision.html</code> to keep them.</p>
+</main>
+
+<script>
+(function () {
+  var tree = document.getElementById('tree');
+
+  function makeNode() {
+    var li = document.createElement('li');
+    li.className = 'node';
+    li.innerHTML =
+      '<div class="row">' +
+        '<button class="twist" aria-label="Toggle"></button>' +
+        '<div class="label"><div class="title" contenteditable="true"></div></div>' +
+        '<div class="count"></div>' +
+      '</div>' +
+      '<ul class="children">' +
+        '<li class="add"><button class="add-btn"><span>Add</span></button></li>' +
+      '</ul>';
+    return li;
+  }
+
+  function focusTitle(li) {
+    var el = li.querySelector('.title');
+    el.focus();
+    var r = document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(false);
+    var s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+
+  function counts() {
+    var nodes = tree.querySelectorAll('li.node');
+    for (var i = 0; i < nodes.length; i++) {
+      var kids = nodes[i].querySelectorAll(':scope > ul.children > li.node').length;
+      nodes[i].querySelector(':scope > .row > .count').textContent = kids ? kids : '';
+    }
+  }
+
+  tree.addEventListener('click', function (e) {
+    var add = e.target.closest('.add-btn');
+    if (add) {
+      var slot = add.closest('li.add');
+      var li = makeNode();
+      slot.parentNode.insertBefore(li, slot);
+      var parent = slot.closest('li.node');
+      if (parent) parent.classList.remove('collapsed');
+      counts();
+      focusTitle(li);
+      return;
+    }
+    var twist = e.target.closest('.twist');
+    if (twist) {
+      var node = twist.closest('li.node');
+      if (node.querySelector(':scope > ul.children > li.node')) {
+        node.classList.toggle('collapsed');
+      }
+    }
+  });
+
+  tree.addEventListener('keydown', function (e) {
+    var title = e.target.closest('.title');
+    if (!title) return;
+    var li = title.closest('li.node');
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var sib = makeNode();
+      li.parentNode.insertBefore(sib, li.nextSibling);
+      counts();
+      focusTitle(sib);
+      return;
+    }
+
+    if ((e.key === 'Backspace' || e.key === 'Delete') && title.textContent.trim() === '') {
+      if (li.querySelector(':scope > ul.children > li.node')) return;
+      e.preventDefault();
+      var prev = li.previousElementSibling;
+      var parent = li.parentNode.closest('li.node');
+      li.parentNode.removeChild(li);
+      counts();
+      if (prev && prev.classList.contains('node')) {
+        var deepest = prev;
+        while (!deepest.classList.contains('collapsed')) {
+          var kids = deepest.querySelectorAll(':scope > ul.children > li.node');
+          if (!kids.length) break;
+          deepest = kids[kids.length - 1];
+        }
+        focusTitle(deepest);
+      } else if (parent) {
+        focusTitle(parent);
+      }
+    }
+  });
+
+  tree.addEventListener('input', counts);
+  counts();
+})();
+</script>
+</body>
+</html>
