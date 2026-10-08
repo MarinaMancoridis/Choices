@@ -38,19 +38,27 @@
      flows down everything inside it. Declared here, not on :root, so that
      var(--h) resolves against the element's own branch. */
   li.node, ul.rail {
-    --fill: hsl(var(--h) 75% 52% / 0.075);
-    --edge: hsl(var(--h) 45% 55% / 0.30);
-    --ink: hsl(var(--h) 45% 30%);
-    --tint: hsl(var(--h) 48% 50%);
+    --fill: hsl(var(--h) 68% 92.5%);
+    --edge: hsl(var(--h) 48% 76%);
+    --ink: hsl(var(--h) 48% 30%);
+    --tint: hsl(var(--h) 48% 46%);
   }
   @media (prefers-color-scheme: dark) {
     li.node, ul.rail {
-      --fill: hsl(var(--h) 80% 60% / 0.10);
-      --edge: hsl(var(--h) 55% 65% / 0.26);
-      --ink: hsl(var(--h) 62% 80%);
-      --tint: hsl(var(--h) 55% 68%);
+      --fill: hsl(var(--h) 38% 15%);
+      --edge: hsl(var(--h) 32% 31%);
+      --ink: hsl(var(--h) 60% 78%);
+      --tint: hsl(var(--h) 50% 62%);
     }
   }
+
+  /* Depth sets the hue: every box on a level is the same colour, whichever
+     branch it sits in. Past the fifth level the sequence starts over. */
+  li.node[data-depth="1"], li.node[data-depth="6"]  { --h: 214; }
+  li.node[data-depth="2"], li.node[data-depth="7"]  { --h: 166; }
+  li.node[data-depth="3"], li.node[data-depth="8"]  { --h: 278; }
+  li.node[data-depth="4"], li.node[data-depth="9"]  { --h: 32; }
+  li.node[data-depth="5"], li.node[data-depth="10"] { --h: 340; }
 
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -118,8 +126,12 @@
     background: var(--fill);
   }
   li.node[data-depth="0"] {
+    --h: 220;
     border-color: var(--hair);
-    background: hsl(var(--h) 40% 50% / 0.04);
+    background: hsl(220 32% 97%);
+  }
+  @media (prefers-color-scheme: dark) {
+    li.node[data-depth="0"] { background: hsl(220 16% 9%); }
   }
 
   .row {
@@ -495,7 +507,6 @@
     list.insertBefore(li, before || list.querySelector(':scope > li.add'));
     parent.classList.remove('collapsed');
     counts();
-    paint();
     focusTitle(li);
   }
 
@@ -553,18 +564,9 @@
     }
   });
 
-  var HUES = [214, 166, 278, 34]; // one per top-level branch, cycled
-  function paint() {
-    var branches = tree.querySelectorAll('li.node[data-depth="1"]');
-    for (var i = 0; i < branches.length; i++) {
-      branches[i].style.setProperty('--h', HUES[i % HUES.length]);
-    }
-  }
-
   tree.addEventListener('input', counts);
   decorate(tree.querySelector(':scope > li'), 0); // one root: a tree, not a list
   counts();
-  paint();
 
   /* ---------- Beliefs: the same text, strung on a line ---------- */
   var rail = document.getElementById('beliefs');
