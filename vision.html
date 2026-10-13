@@ -466,69 +466,70 @@
       <ul class="tree" id="tree">
         <li>
           Build a language model that can reason about a person's choices and preferences.
-          Today's decision aids hold a person as a few unknown weights — too impoverished an
-          account of anyone. We will build a model of a person rich enough to train against,
-          and use it to evaluate and build aids that actually help someone choose.
 
           <ul>
-            <li>Show that today's models cannot help a person choose
+            <li>Build an eval for choice.
               <ul>
-                <li>Choose the first setting to work in, and the decisions it covers</li>
-                <li>Build a benchmark that measures how well a model helps a person reason about their own choices</li>
-                <li>Score frontier models on it, and show they do poorly
+                <li>Identify choice desiderata
                   <ul>
-                    <li>Gather the aids built for deciding — DELLMa, Decision Flow, Decisive — and score them alongside</li>
-                    <li>Reproduce the ones we cannot run, or get them from their authors</li>
+                    <li>Could include known behavioral biases (i.e. sunk cost, decoy effect)</li>
+                    <li>Could include choice axioms (i.e. transitivity of preferences)</li>
+                    <li>Answer: should these axioms hold? Paternalism? Should people be rational?</li>
                   </ul>
                 </li>
-                <li>Show they fail at helping a person choose, not only at helping them reason</li>
+                <li>Define metric(s)</li>
               </ul>
             </li>
-
-            <li>Build a neural model of a user
+            <li>Build neural user model
               <ul>
-                <li>Give it dimensions that hold steady and dimensions that move with context</li>
-                <li>Put known effects into it — a sunk cost, a standing aversion to price — alongside real ambivalence</li>
-                <li>Make adding one more dimension of a person a modular operation
-                  <ul>
-                    <li>Pick the dimensions that pay for themselves first</li>
-                    <li>Hold the line between domain-agnostic psychology and a domain taken seriously</li>
-                  </ul>
-                </li>
-                <li>Earn the claim that the model is human-like enough to grade an aid against</li>
+                <li>Identify way to bake in stable / unstable dimensions</li>
+                <li>NOTE to discuss: This... could have been its own top-level bubble?? I put it here because of the dependency structure.</li>
               </ul>
             </li>
-
-            <li>Build the verifier that trains a model to reason about people
+            <li>Show existing models are poor at having people choose.
               <ul>
-                <li>Build a vocalizer that says in English what tendencies the user model is exhibiting
+                <li>Choose the relevant aids/models (i.e. DELLMa, Decision Flow, Decisive, frontier models)</li>
+                <li>Apply eval to each aid at different areas of the user space (eval at level of model-user tuple)</li>
+              </ul>
+            </li>
+            <li>Build the verifier that trains a model to reason about people.
+              <ul>
+                <li>Build a vocalizer that says in English what tendencies the user/utility model is exhibiting
                   <ul>
-                    <li>Design each mechanism so the vocalizer can be trusted without leaning on probes</li>
-                    <li>Let it voice its own uncertainty instead of passing the network straight through</li>
-                    <li>Keep it general enough that it is not just a fitting of our own user model</li>
+                    <li>Build metric to defend trust in the vocalizer</li>
                   </ul>
                 </li>
                 <li>Invert the vocalizer to recover an estimated utility function
                   <ul>
-                    <li>Settle whether to invert at all, or read utilities off the model directly</li>
+                    <li>Build metric to defend trust in the inverter</li>
                   </ul>
                 </li>
                 <li>Turn that utility function into a reward environment for behavior</li>
-                <li>Train a reasoning model against it, and beat every aid we benchmarked
-                  <ul>
-                    <li>Separate the error the user model caused from the error the vocalizer caused</li>
-                    <li>Teach it to clarify what a person cannot articulate while it learns what they want</li>
-                  </ul>
-                </li>
               </ul>
             </li>
-
-            <li>Land it where it counts
+            <li>Train an LLM that can reason about psychology and preferences.
               <ul>
-                <li>Grade every aid across the space of users rather than on one fixed benchmark</li>
-                <li>Choose the domain that carries the result, and win in it</li>
-                <li>Show with real users that our model helps them choose better</li>
-                <li>Write it up so the field cannot file it away as prompting a user persona</li>
+                <li>Identify method to integrate the vocalizer/inverter into model training process</li>
+                <li>Integrate neural model</li>
+                <li>Hill climb</li>
+                <li>Build mechanisms that attribute errors to: (1) vocalizer, (2) inverter, (3) optimization step within hill climbing in reward environment</li>
+              </ul>
+            </li>
+            <li>Show our model is better at helping people choose.
+              <ul>
+                <li>Select relevant domain(s) / dataset(s)</li>
+                <li>Apply choice eval (alternative: downstream effects?) to the new model (is this cheating??)
+                  <ul>
+                    <li>Do this on the level of domain</li>
+                    <li>Do this on the level of user type</li>
+                    <li>Do this on the level of psych mechanism?</li>
+                  </ul>
+                </li>
+                <li>Show success in hard-hitting, splashy domain.
+                  <ul>
+                    <li>Which to pick?</li>
+                  </ul>
+                </li>
               </ul>
             </li>
           </ul>
@@ -537,15 +538,19 @@
     </section>
 
     <section>
-      <h2 class="col-name" contenteditable="true">Minimal beliefs</h2>
+      <h2 class="col-name" contenteditable="true">Minimal beliefs (falsifiable hypotheses)</h2>
 
       <!-- One <li> per belief; the line and the dots are drawn around them. -->
       <ul class="rail" id="beliefs">
-        <li>A person is better off choosing with an aid than without one</li>
-        <li>People make mistakes when they choose</li>
-        <li>People cannot say what they want, but it can be drawn out of them</li>
-        <li>There are structured ways to predict a person</li>
-        <li>What worked for math and code — a reward environment — will work for behavior</li>
+        <li>A person can be made better off choosing with an aid than without one
+          <ul>
+            <li>Either people make structured mistakes</li>
+            <li>Or there is an inversion problem at play</li>
+            <li>Or there is an articulation problem at play</li>
+            <li>Or something else...</li>
+          </ul>
+        </li>
+        <li>There are structured ways to predict a person (i.e. the high-ROI dimensions even exist)</li>
       </ul>
     </section>
   </div>
@@ -558,27 +563,25 @@
       <ul class="rail" id="hard">
         <li>People are complex and the area is fuzzy
           <ul>
-            <li>What is known about a person is scattered, and not in a computable form</li>
+            <li>What is known about a person is currently scattered and not in a computable form</li>
+            <li>Some problems at play (i.e. inversion) don't have a technical solution yet</li>
           </ul>
         </li>
-        <li>Reasoning models are trained where something can score a trace — nothing scores a trace about a person</li>
-        <li>Structure buys a vocalizer we can trust and costs the flexibility that made the model worth having</li>
-        <li>There will always be dimensions of a person the model misses</li>
-        <li>The tighter the fit — to our own user model, or to one domain — the narrower the contribution</li>
+        <li>Tradeoff between structure and flexibility throughout: more structured [vocalizer/domain/modeled bias] -&gt; less generalizable</li>
       </ul>
     </section>
 
     <section>
       <h2 class="col-name" contenteditable="true">Why I think this will work</h2>
       <ul class="rail" id="works">
-        <li>Reward environments have already carried math and code</li>
+        <li>Reward environments have already worked in math and code</li>
         <li>Today's models are psychologically impoverished, so there is room to beat them</li>
-        <li>The new complexity sits somewhere new: a neural user model rather than a structural one
+        <li>The new complexity sits somewhere new: a neural user model rather than a structural utility model
           <ul>
             <li>Heterogeneity between people stops being one free variable</li>
+            <li>Our neural model sits at a level of abstraction that allows us to compare decision aids</li>
           </ul>
         </li>
-        <li>We have a path to a reward function that can improve, build and compare decision aids</li>
       </ul>
     </section>
   </div>
